@@ -26,7 +26,6 @@ from __future__ import annotations
 import hashlib
 import random
 from datetime import datetime, time, timedelta
-from typing import Any
 
 from hotel_agent.models import (
     Channel,
