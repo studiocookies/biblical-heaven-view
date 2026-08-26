@@ -1,0 +1,267 @@
+{
+  "data": [
+    {
+      "type": "hotel-offers",
+      "hotel": {
+        "type": "hotel",
+        "hotelId": "MCLONGHM",
+        "chainCode": "MC",
+        "dupeId": "700152672",
+        "name": "LONDON MARRIOTT HOTEL COUNTY HALL",
+        "cityCode": "LON",
+        "latitude": 51.5017,
+        "longitude": -0.1197
+      },
+      "available": true,
+      "offers": [
+        {
+          "id": "9YQD3XMPRT",
+          "checkInDate": "2026-10-12",
+          "checkOutDate": "2026-10-15",
+          "rateCode": "RAC",
+          "rateFamilyEstimated": {"code": "RAC", "type": "P"},
+          "room": {
+            "type": "A1K",
+            "typeEstimated": {"category": "DELUXE_ROOM", "beds": 1, "bedType": "KING"},
+            "description": {"text": "Deluxe Room, 1 King Bed, River View", "lang": "EN"}
+          },
+          "guests": {"adults": 2},
+          "boardType": "ROOM_ONLY",
+          "price": {
+            "currency": "USD",
+            "base": "450.00",
+            "total": "531.00",
+            "variations": {
+              "average": {"base": "150.00"}
+            },
+            "taxes": [
+              {"code": "TOTAL_TAX", "percentage": "12.0", "included": false, "amount": "54.00", "currency": "USD"},
+              {"code": "CITY_TAX", "included": false, "amount": "27.00", "currency": "USD"}
+            ]
+          },
+          "policies": {
+            "paymentType": "guarantee",
+            "cancellations": [
+              {"deadline": "2026-10-09T18:00:00Z", "amount": "150.00", "policyType": "FULL_STAY"}
+            ],
+            "refundable": {"cancellationRefund": "REFUNDABLE_UP_TO_DEADLINE"}
+          },
+          "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/9YQD3XMPRT"
+        },
+        {
+          "id": "9YQD3XMPRU",
+          "checkInDate": "2026-10-12",
+          "checkOutDate": "2026-10-15",
+          "rateCode": "NRF",
+          "rateFamilyEstimated": {"code": "NRF", "type": "P"},
+          "room": {
+            "type": "A1Q",
+            "typeEstimated": {"category": "STANDARD_ROOM", "beds": 1, "bedType": "QUEEN"},
+            "description": {"text": "Standard Room, 1 Queen Bed - Non-Refundable Rate", "lang": "EN"}
+          },
+          "guests": {"adults": 2},
+          "boardType": "BREAKFAST",
+          "price": {
+            "currency": "USD",
+            "base": "372.00",
+            "total": "421.00",
+            "variations": {
+              "average": {"base": "124.00"}
+            },
+            "taxes": [
+              {"code": "TOTAL_TAX", "percentage": "12.0", "included": false, "amount": "44.64", "currency": "USD"},
+              {"code": "CITY_TAX", "included": false, "amount": "4.36", "currency": "USD"}
+            ]
+          },
+          "policies": {
+            "paymentType": "guarantee",
+            "cancellations": [],
+            "refundable": {"cancellationRefund": "NON_REFUNDABLE"}
+          },
+          "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/9YQD3XMPRU"
+        }
+      ],
+      "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/by-hotel?hotelId=MCLONGHM"
+    },
+    {
+      "type": "hotel-offers",
+      "hotel": {
+        "type": "hotel",
+        "hotelId": "HLLONTW3",
+        "chainCode": "HL",
+        "dupeId": "700038421",
+        "name": "HILTON LONDON TOWER BRIDGE",
+        "cityCode": "LON",
+        "latitude": 51.5028,
+        "longitude": -0.0798
+      },
+      "available": true,
+      "offers": [
+        {
+          "id": "7KPL2VNXQZ",
+          "checkInDate": "2026-10-12",
+          "checkOutDate": "2026-10-15",
+          "rateCode": "BAR",
+          "rateFamilyEstimated": {"code": "BAR", "type": "P"},
+          "room": {
+            "type": "K1D",
+            "typeEstimated": {"category": "SUPERIOR_ROOM", "beds": 1, "bedType": "KING"},
+            "description": {"text": "Superior King Room", "lang": "EN"}
+          },
+          "guests": {"adults": 2},
+          "boardType": "ROOM_ONLY",
+          "price": {
+            "currency": "USD",
+            "base": "534.00",
+            "total": "639.18",
+            "variations": {
+              "average": {"base": "178.00"}
+            },
+            "taxes": [
+              {"code": "TOTAL_TAX", "percentage": "15.0", "included": false, "amount": "80.10", "currency": "USD"},
+              {"code": "CITY_TAX", "included": false, "amount": "25.08", "currency": "USD"}
+            ]
+          },
+          "policies": {
+            "paymentType": "deposit",
+            "cancellations": [
+              {"deadline": "2026-10-10T12:00:00Z", "amount": "178.00", "policyType": "FULL_STAY"}
+            ],
+            "refundable": {"cancellationRefund": "REFUNDABLE_UP_TO_DEADLINE"}
+          },
+          "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/7KPL2VNXQZ"
+        }
+      ],
+      "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/by-hotel?hotelId=HLLONTW3"
+    },
+    {
+      "type": "hotel-offers",
+      "hotel": {
+        "type": "hotel",
+        "hotelId": "HYLONREG",
+        "chainCode": "HY",
+        "dupeId": "700091137",
+        "name": "HYATT REGENCY LONDON",
+        "cityCode": "LON",
+        "latitude": 51.4954,
+        "longitude": -0.1743
+      },
+      "available": true,
+      "offers": [
+        {
+          "id": "3MNB8WERTY",
+          "checkInDate": "2026-10-12",
+          "checkOutDate": "2026-10-15",
+          "rateCode": "ADV",
+          "rateFamilyEstimated": {"code": "ADV", "type": "P"},
+          "room": {
+            "type": "A2Q",
+            "typeEstimated": {"category": "DELUXE_ROOM", "beds": 2, "bedType": "DOUBLE"},
+            "description": {"text": "Deluxe Room, 2 Double Beds - Advance Purchase Non-Refundable", "lang": "EN"}
+          },
+          "guests": {"adults": 2},
+          "boardType": "ROOM_ONLY",
+          "price": {
+            "currency": "USD",
+            "base": "300.00",
+            "total": "339.00",
+            "variations": {
+              "average": {"base": "100.00"}
+            },
+            "taxes": [
+              {"code": "VAT", "percentage": "13.0", "included": false, "amount": "39.00", "currency": "USD"}
+            ]
+          },
+          "policies": {
+            "paymentType": "guarantee",
+            "cancellations": [],
+            "refundable": {"cancellationRefund": "NON_REFUNDABLE"}
+          },
+          "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/3MNB8WERTY"
+        },
+        {
+          "id": "3MNB8WERTZ",
+          "checkInDate": "2026-10-12",
+          "checkOutDate": "2026-10-15",
+          "rateCode": "RAC",
+          "rateFamilyEstimated": {"code": "RAC", "type": "P"},
+          "room": {
+            "type": "A1K",
+            "typeEstimated": {"category": "DELUXE_ROOM", "beds": 1, "bedType": "KING"},
+            "description": {"text": "Deluxe Room, 1 King Bed", "lang": "EN"}
+          },
+          "guests": {"adults": 2},
+          "boardType": "HALF_BOARD",
+          "price": {
+            "currency": "USD",
+            "base": "402.00",
+            "total": "482.40",
+            "variations": {
+              "average": {"base": "134.00"}
+            },
+            "taxes": [
+              {"code": "TOTAL_TAX", "percentage": "16.0", "included": false, "amount": "64.32", "currency": "USD"}
+            ]
+          },
+          "policies": {
+            "paymentType": "guarantee",
+            "cancellations": [
+              {"deadline": "2026-10-11T15:00:00Z", "amount": "134.00", "policyType": "FULL_STAY"}
+            ],
+            "refundable": {"cancellationRefund": "REFUNDABLE_UP_TO_DEADLINE"}
+          },
+          "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/3MNB8WERTZ"
+        }
+      ],
+      "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/by-hotel?hotelId=HYLONREG"
+    },
+    {
+      "type": "hotel-offers",
+      "hotel": {
+        "type": "hotel",
+        "hotelId": "RTLONIND",
+        "chainCode": "",
+        "name": "THE ROOKERY INDEPENDENT HOTEL",
+        "cityCode": "LON",
+        "latitude": 51.5186,
+        "longitude": -0.1007
+      },
+      "available": true,
+      "offers": [
+        {
+          "id": "5FGH9JKLMN",
+          "checkInDate": "2026-10-12",
+          "checkOutDate": "2026-10-15",
+          "rateCode": "STD",
+          "room": {
+            "type": "STD",
+            "typeEstimated": {"category": "STANDARD_ROOM", "beds": 1, "bedType": "QUEEN"},
+            "description": {"text": "Classic Queen Room", "lang": "EN"}
+          },
+          "guests": {"adults": 2},
+          "boardType": "ROOM_ONLY",
+          "price": {
+            "currency": "USD",
+            "base": "255.00",
+            "total": "285.60",
+            "variations": {
+              "average": {"base": "85.00"}
+            },
+            "taxes": [
+              {"code": "TOTAL_TAX", "included": false, "amount": "30.60", "currency": "USD"}
+            ]
+          },
+          "policies": {
+            "paymentType": "guarantee",
+            "cancellations": [
+              {"deadline": "2026-10-09T00:00:00Z", "amount": "85.00", "policyType": "FULL_STAY"}
+            ],
+            "refundable": {"cancellationRefund": "REFUNDABLE_UP_TO_DEADLINE"}
+          },
+          "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/5FGH9JKLMN"
+        }
+      ],
+      "self": "https://test.api.amadeus.com/v3/shopping/hotel-offers/by-hotel?hotelId=RTLONIND"
+    }
+  ]
+}
