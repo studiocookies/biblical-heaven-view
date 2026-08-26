@@ -1,65 +1,91 @@
-# hotel-agent
+# hotelfinder
 
-A personal hotel deal agent. It searches for stays, normalizes offers from
-different channels (direct / OTA / award), computes a **deterministic
-effective cost** — taxes, mandatory fees, card rewards, statement credits,
-portal cashback, hotel points earned, included benefits, and points
-opportunity cost — ranks everything, then runs a **skeptical reviewer pass**
-that hunts for missed fees, better rates, bad loyalty logic, cancellation
-risk, and better payment options before you see a recommendation. If the
-skeptic finds a real problem, the recommendation is revised and says so.
+One command. Two questions. Then it searches the internet for the cheapest
+room — and for the room that's actually worth the money.
 
-Nothing is ever booked without your explicit approval of the exact plan
-(offer + card + amounts), enforced by a plan-hash approval token.
+```
+$ hotelfinder
+What dates do you want a room for?  dec 12-14
+What ZIP code should I search?      78382
+```
 
-## Quick start
+It comes back with exactly two recommendations:
+
+- **Cheapest option** — the absolute lowest legitimate price it can find,
+  shown even if the place looks terrible, with the downsides stated plainly
+  (bed bugs, filth, bad area, surprise fees, non-refundable).
+- **Best overall value** — the best balance of cheap and actually decent. A
+  $61 room with 8.4/10 reviews beats a $52 room with 5.2/10 and bed bug
+  reports, and it tells you exactly why.
+
+## Install and run
 
 ```bash
-pip install -e ".[dev]"
-hotel-agent profile demo          # seed example loyalty accounts + cards
-hotel-agent search "chicago" --checkin 2026-10-09 --checkout 2026-10-12
-hotel-agent book plan --offer <OFFER_ID>
-hotel-agent book confirm --plan <PLAN_ID> --token <BOOK-xxxx>
+pip install -e .
+export ANTHROPIC_API_KEY=sk-ant-...      # https://console.anthropic.com/settings/keys
+hotelfinder
 ```
 
-## What is REAL vs PARTIAL vs MOCK
+Non-interactive:
 
-| Piece | Status |
-|---|---|
-| Effective-cost engine (integer-cents, auditable line items) | REAL |
-| Offer normalization (true totals incl. at-property fees) | REAL |
-| Earn-vs-burn points reasoning (realized cpp vs baseline, net of forgone earning) | REAL |
-| Deterministic skeptic pass + auto-revision | REAL |
-| Memory (profile, loyalty, card metadata, searches, bookings; SQLite) | REAL |
-| Booking approval flow (token-gated; manual executor gives exact steps) | REAL (manual) |
-| Amadeus live-price provider | REAL code, needs `AMADEUS_CLIENT_ID`/`AMADEUS_CLIENT_SECRET` + open network; untested live |
-| Fixture provider | MOCK — clearly labelled; used only when no live provider is available |
-| LLM second-opinion skeptic | OPTIONAL — runs only with `ANTHROPIC_API_KEY` |
-| Automated booking execution (browser/computer-use) | NOT IMPLEMENTED — `BookingExecutor` interface is the plug-in point |
-| Cross-currency comparison | PARTIAL — ranks within one currency and discloses exclusions; no FX conversion |
-| Zero/three-decimal currencies (JPY, KWD, …) | PARTIAL — true totals only; reward/points adjustments honestly skipped |
-
-When only fixture data is available, every report is bannered `MOCK DATA`
-and booking plans are labelled dry-run. The agent never presents mock
-prices as live and never fabricates a booking.
-
-## Security posture
-
-- No card numbers, CVVs, or expiry dates anywhere in the data model — cards
-  are metadata only (name, reward currency, perks).
-- The memory store runs a PAN-redaction pass over everything it persists as
-  defense-in-depth.
-- The optional LLM skeptic receives only an offer summary — never profile
-  balances or card details beyond display names.
-- Amadeus credentials are read from env and never logged.
-
-## Architecture
-
-```
-providers/ (Amadeus real, fixtures mock)  →  normalize.py  →  cost_engine.py + points.py
-        →  recommend.py (rank)  →  skeptic.py (review + revise)  →  cli.py render
-memory/store.py (SQLite)  ·  booking/executor.py (token-gated, pluggable)
+```bash
+hotelfinder --dates "2026-12-12 to 2026-12-14" --zip 78382
 ```
 
-Point valuations and earn rates ship as documented community-consensus
-defaults (mid-2025) — override yours with `hotel-agent profile set-valuation`.
+Dates are forgiving: `dec 12-14`, `12/12 - 12/14`, `2026-12-12 to 2026-12-14`,
+`tonight`, `tomorrow`, or a single date (one night).
+
+## How the search works
+
+The searching runs **server-side via the Claude API's `web_search` and
+`web_fetch` tools** — not by scraping from your machine. That matters: OTA
+sites block scrapers aggressively, and this sidesteps that entirely while
+needing no Booking/Expedia/SerpAPI keys.
+
+Two passes:
+
+1. **Research** (`claude-opus-5`, high effort, up to 30 web searches + 15 page
+   fetches). It resolves the ZIP to a city plus nearby towns, then searches
+   across deliberately different source families — metasearch and OTAs (Kayak,
+   Trivago, Booking, Expedia, Hotels.com, Priceline, Agoda, Hotwire), budget
+   brand sites direct (Motel 6, Super 8, Days Inn, Econo Lodge, Rodeway, Red
+   Roof, Best Western, La Quinta), independent local motels via their own
+   sites, and discount angles (AAA/senior/government, weekly rates, opaque
+   deals). Then it goes and reads recent reviews for the cheapest candidates,
+   which is where "cheap but awful" gets caught.
+2. **Extraction** — a tool-free structured-output pass that turns the research
+   into validated records. Prices, review scores, and concerns are schema-bound
+   rather than free text.
+
+The research prompt forbids inventing prices: anything it can't verify is
+marked low confidence, and **low-confidence prices are never recommended.**
+
+## How "best value" is decided
+
+Deterministic, in `evaluate.py` — not a vague LLM judgment call:
+
+```
+value_score = quality_points - 12.0 * (extra_cost / cheapest_cost)
+```
+
+`quality_points` starts at the 0-10 review score (6.0 if unknown, with a
+penalty), then subtracts for concerns — severe ones (bed bugs, roaches, mold,
+filth, safety) cost 1.5 points each, moderate ones 0.5, capped at 4.0. The
+price weight means a room 17% pricier has to be about 2 review points better
+to win. Cheapest and best value are allowed to be the same property, and it
+says so when they are.
+
+## Status
+
+Working and tested (86 tests): input parsing, research/extraction wiring,
+value ranking, output, and failure handling all pass. **Not yet exercised
+against the live API** — this build environment has no `ANTHROPIC_API_KEY`, so
+the one thing not yet proven end-to-end is a real billed search. Everything
+around it is verified with stubs.
+```
+src/hotelfinder/
+  models.py     # Stay / SearchInput / Result
+  search.py     # the web research engine (the important part)
+  evaluate.py   # cheapest + best-value picking
+  cli.py        # prompts, rendering, entry point
+```
