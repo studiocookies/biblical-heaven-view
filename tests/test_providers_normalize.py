@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -238,14 +238,26 @@ def test_normalize_amadeus_delta_becomes_other_mandatory_fee(amadeus_raw_offers)
 
 
 def test_normalize_amadeus_tax_payable_matches_included_flag(amadeus_raw_offers):
+    # BUG A regression lock: Amadeus's `included` flag on a tax means "already
+    # folded into price.base", NOT "who collects it" / "excluded from the
+    # advertised total". On this fixture, base 450.00 + taxes 81.00 == total
+    # 531.00 exactly, proving the taxes ARE part of what's charged at booking
+    # (the card is charged 531.00) even though each tax says "included: false".
+    # The old (buggy) mapping put these at AT_PROPERTY / excluded-from-total,
+    # which made the skeptic fire a false missed_fee warning. The corrected
+    # mapping is payable=UNKNOWN (we don't know the collection locus from this
+    # field alone) and included_in_advertised_total=True (it demonstrably is).
     q = _query()
     offers = normalize(amadeus_raw_offers, q)
     marriott_refundable = _find(offers, "London Marriott Hotel County Hall", "RAC")
-    for fee in marriott_refundable.fees:
-        if fee.kind.value == "tax":
-            # fixture taxes all have "included": false -> AT_PROPERTY, not included in advertised total
-            assert fee.payable.value == "at_property"
-            assert fee.included_in_advertised_total is False
+    tax_lines = [f for f in marriott_refundable.fees if f.kind.value == "tax"]
+    assert len(tax_lines) == 2
+    for fee in tax_lines:
+        assert fee.payable.value == "unknown"
+        assert fee.included_in_advertised_total is True
+    # And the invariant that actually matters: base + fees reconciles to
+    # Amadeus's own price.total (531.00), with nothing double counted.
+    assert marriott_refundable.total_cash_cents == 53100
 
 
 def test_normalize_amadeus_refundability(amadeus_raw_offers):
@@ -287,6 +299,234 @@ def test_normalize_amadeus_breakfast_benefit(amadeus_raw_offers):
 
     room_only_offer = _find(offers, "Hilton London Tower Bridge")
     assert room_only_offer.included_benefits == []
+
+
+# ---------------------------------------------------------------------------
+# BUG B: per-night / per-occupant tax multiplication, verified against
+# price.total reconciliation.
+# ---------------------------------------------------------------------------
+
+def test_normalize_amadeus_per_night_per_occupant_tax_multiplied(amadeus_raw_offers):
+    q = _query()
+    offers = normalize(amadeus_raw_offers, q)
+    rookery = _find(offers, "The Rookery Independent Hotel")
+    # base 255.00; TOTAL_TAX 30.60 flat; CITY_TAX $1.00 tagged
+    # pricingFrequency=PER_NIGHT + pricingMode=PER_OCCUPANT over 3 nights / 2
+    # adults -> 1.00 * 3 * 2 = 6.00 (600 cents), NOT the raw 1.00 (100 cents).
+    # total = 255.00 + 30.60 + 6.00 = 291.60 exactly, which is what proves the
+    # multiplied interpretation (not the raw one) is the one that reconciles.
+    assert rookery.base_cents == 25500
+    tax_lines = {f.description: f.amount_cents for f in rookery.fees if f.kind.value == "tax"}
+    assert tax_lines == {"TOTAL_TAX": 3060, "CITY_TAX": 600}
+    assert not any(f.kind.value == "other_mandatory" for f in rookery.fees)
+    assert rookery.total_cash_cents == 29160
+    for f in rookery.fees:
+        assert f.payable.value == "unknown"
+        assert f.included_in_advertised_total is True
+
+
+def test_normalize_amadeus_per_night_tax_prefers_unmultiplied_when_it_reconciles_better():
+    # If the API's per-night amount is already the full-stay amount (a data
+    # inconsistency), multiplying by nights would overshoot price.total. The
+    # unmultiplied reading reconciles exactly, so it must be the one kept.
+    raw = RawOffer(
+        provider="amadeus",
+        data_source=DataSource.LIVE,
+        payload={
+            "hotel": {"hotelId": "PNTEST", "chainCode": "", "name": "Per Night Test Hotel", "cityCode": "LON"},
+            "offers": [
+                {
+                    "id": "pn-1",
+                    "checkInDate": "2026-10-12",
+                    "checkOutDate": "2026-10-15",  # 3 nights
+                    "guests": {"adults": 2},
+                    "price": {
+                        "currency": "USD",
+                        "base": "300.00",
+                        "total": "330.00",
+                        "taxes": [
+                            {
+                                "code": "CITY_TAX",
+                                "included": False,
+                                "amount": "30.00",  # already the full-stay figure
+                                "currency": "USD",
+                                "pricingFrequency": "PER_NIGHT",
+                            }
+                        ],
+                    },
+                    "policies": {"refundable": {"cancellationRefund": "NON_REFUNDABLE"}, "cancellations": []},
+                }
+            ],
+        },
+    )
+    q = _query()
+    offers = normalize([raw], q)
+    assert len(offers) == 1
+    offer = offers[0]
+    assert offer.base_cents == 30000
+    tax_lines = [f for f in offer.fees if f.kind.value == "tax"]
+    assert len(tax_lines) == 1
+    assert tax_lines[0].amount_cents == 3000  # unmultiplied 30.00, not 90.00
+    assert not any(f.kind.value == "other_mandatory" for f in offer.fees)
+    assert offer.total_cash_cents == 33000
+
+
+# ---------------------------------------------------------------------------
+# BUG A: included=true tax must be subtracted out of base_cents, not
+# double-counted, with a guard against driving base negative.
+# ---------------------------------------------------------------------------
+
+def test_normalize_amadeus_included_tax_subtracted_from_base():
+    raw = RawOffer(
+        provider="amadeus",
+        data_source=DataSource.LIVE,
+        payload={
+            "hotel": {"hotelId": "INCTAX", "chainCode": "", "name": "Included Tax Hotel", "cityCode": "LON"},
+            "offers": [
+                {
+                    "id": "inc-1",
+                    "checkInDate": "2026-10-12",
+                    "checkOutDate": "2026-10-15",
+                    "guests": {"adults": 2},
+                    "price": {
+                        "currency": "USD",
+                        "base": "300.00",
+                        "total": "300.00",
+                        "taxes": [{"code": "VAT", "included": True, "amount": "50.00", "currency": "USD"}],
+                    },
+                    "policies": {"refundable": {"cancellationRefund": "NON_REFUNDABLE"}, "cancellations": []},
+                }
+            ],
+        },
+    )
+    q = _query()
+    offers = normalize([raw], q)
+    assert len(offers) == 1
+    offer = offers[0]
+    # $50 VAT was already inside the $300 base -> base_cents must shrink by it
+    assert offer.base_cents == 25000
+    tax_lines = [f for f in offer.fees if f.kind.value == "tax"]
+    assert len(tax_lines) == 1
+    assert tax_lines[0].amount_cents == 5000
+    assert tax_lines[0].payable.value == "unknown"
+    assert tax_lines[0].included_in_advertised_total is True
+    # No double counting: total_cash_cents must still equal price.total.
+    assert offer.total_cash_cents == 30000
+
+
+def test_normalize_amadeus_included_tax_guard_against_negative_base():
+    raw = RawOffer(
+        provider="amadeus",
+        data_source=DataSource.LIVE,
+        payload={
+            "hotel": {"hotelId": "BADINC", "chainCode": "", "name": "Bad Included Hotel", "cityCode": "LON"},
+            "offers": [
+                {
+                    "id": "inc-2",
+                    "checkInDate": "2026-10-12",
+                    "checkOutDate": "2026-10-15",
+                    "guests": {"adults": 2},
+                    "price": {
+                        "currency": "USD",
+                        "base": "40.00",
+                        "total": "40.00",
+                        "taxes": [{"code": "VAT", "included": True, "amount": "50.00", "currency": "USD"}],
+                    },
+                    "policies": {"refundable": {"cancellationRefund": "NON_REFUNDABLE"}, "cancellations": []},
+                }
+            ],
+        },
+    )
+    q = _query()
+    offers = normalize([raw], q)
+    assert len(offers) == 1
+    offer = offers[0]
+    # A $50 "included" tax can't come out of a $40 base -> skip the
+    # subtraction and omit the line entirely, per the guard.
+    assert offer.base_cents == 4000
+    assert offer.fees == []
+    assert offer.total_cash_cents == 4000
+
+
+# ---------------------------------------------------------------------------
+# BUG C: cancellation parsing must consider every window, not just [0], and
+# must stay tolerant of malformed entries.
+# ---------------------------------------------------------------------------
+
+def test_normalize_amadeus_cancellation_picks_earliest_deadline():
+    raw = RawOffer(
+        provider="amadeus",
+        data_source=DataSource.LIVE,
+        payload={
+            "hotel": {"hotelId": "MULTICANC", "chainCode": "", "name": "Multi Cancel Hotel", "cityCode": "LON"},
+            "offers": [
+                {
+                    "id": "multi-1",
+                    "checkInDate": "2026-10-12",
+                    "checkOutDate": "2026-10-15",
+                    "guests": {"adults": 2},
+                    "price": {
+                        "currency": "USD",
+                        "base": "200.00",
+                        "total": "220.00",
+                        "taxes": [{"code": "TAX", "included": False, "amount": "20.00"}],
+                    },
+                    "policies": {
+                        "refundable": {"cancellationRefund": "REFUNDABLE_UP_TO_DEADLINE"},
+                        # cancellations[0] is NOT the earliest -> the old
+                        # blind cancellations[0] behavior would get this wrong.
+                        "cancellations": [
+                            {"deadline": "2026-10-10T12:00:00Z", "amount": "50.00", "policyType": "FULL_STAY"},
+                            {"deadline": "2026-10-08T12:00:00Z", "amount": "20.00", "policyType": "FULL_STAY"},
+                        ],
+                    },
+                }
+            ],
+        },
+    )
+    q = _query()
+    offers = normalize([raw], q)
+    assert len(offers) == 1
+    offer = offers[0]
+    assert offer.cancel_deadline == datetime(2026, 10, 8, 12, 0, tzinfo=timezone.utc)
+    # An exact-match refundability flag still wins outright.
+    assert offer.refundability == Refundability.FULLY_REFUNDABLE
+
+
+def test_normalize_amadeus_cancellation_malformed_entries_tolerated_and_partial_fallback():
+    raw = RawOffer(
+        provider="amadeus",
+        data_source=DataSource.LIVE,
+        payload={
+            "hotel": {"hotelId": "BADCANC", "chainCode": "", "name": "Bad Cancel Hotel", "cityCode": "LON"},
+            "offers": [
+                {
+                    "id": "badc-1",
+                    "checkInDate": "2026-10-12",
+                    "checkOutDate": "2026-10-15",
+                    "guests": {"adults": 2},
+                    "price": {"currency": "USD", "base": "100.00", "total": "100.00", "taxes": []},
+                    "policies": {
+                        # Not one of the exact-match literals, but reads as
+                        # refundable, and there IS a real penalty -> hardened
+                        # PARTIALLY_REFUNDABLE fallback (BUG C).
+                        "refundable": {"cancellationRefund": "REFUNDABLE_WITH_PENALTY"},
+                        "cancellations": [
+                            "not-a-dict",  # malformed entry, must not crash
+                            {"deadline": "not-a-date", "amount": "10.00"},  # bad deadline, ok penalty
+                            {"amount": "15.00"},  # no deadline at all
+                        ],
+                    },
+                }
+            ],
+        },
+    )
+    q = _query()
+    offers = normalize([raw], q)  # must not raise
+    assert len(offers) == 1
+    offer = offers[0]
+    assert offer.cancel_deadline is None  # no well-formed deadline anywhere
+    assert offer.refundability == Refundability.PARTIALLY_REFUNDABLE
 
 
 def test_normalize_skips_malformed_offer_without_crashing():

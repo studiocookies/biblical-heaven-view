@@ -188,51 +188,180 @@ def _normalize_amadeus_item(raw: RawOffer, query: SearchQuery) -> list[Normalize
     return results
 
 
+def _resolve_nights(offer: dict[str, Any], query: SearchQuery) -> int:
+    """Nights for per-night tax math: prefer the offer's own dates, falling
+    back to the search query when they're missing or malformed."""
+    check_in = offer.get("checkInDate")
+    check_out = offer.get("checkOutDate")
+    try:
+        if check_in and check_out:
+            nights = (date.fromisoformat(str(check_out)) - date.fromisoformat(str(check_in))).days
+            if nights > 0:
+                return nights
+    except (ValueError, TypeError):
+        pass
+    return query.nights
+
+
+def _resolve_adults(offer: dict[str, Any], query: SearchQuery) -> int:
+    """Adults for per-occupant tax math: prefer the offer's own guest count,
+    falling back to the search query when it's missing or malformed."""
+    guests = offer.get("guests") or {}
+    try:
+        adults = int(guests.get("adults"))
+        if adults > 0:
+            return adults
+    except (TypeError, ValueError):
+        pass
+    return query.adults
+
+
+def _build_tax_fees(
+    taxes_raw: list[Any],
+    currency: str,
+    base_cents: int,
+    nights: int,
+    adults: int,
+    use_multiplier: bool,
+) -> tuple[int, list[FeeLine], int]:
+    """Build fee lines for one interpretation of the taxes[] array.
+
+    Amadeus's `included` flag means "already folded into price.base", not
+    "who collects it" — so every tax fee line is emitted with
+    payable=UNKNOWN and included_in_advertised_total=True (BUG A): we simply
+    don't know the collection locus from this field, but we do know (from
+    price.total) that the amount is part of what gets charged.
+
+    `use_multiplier` selects whether `pricingFrequency: PER_NIGHT` and/or
+    `pricingMode: PER_OCCUPANT` amounts get multiplied by nights/adults
+    (BUG B) — the caller tries both interpretations and keeps whichever
+    reconciles against price.total.
+
+    Returns (possibly-reduced base_cents, fee lines, sum of NON-included tax
+    cents) — the non-included sum is what must reconcile against
+    price.total alongside base_cents.
+    """
+    fees: list[FeeLine] = []
+    working_base = base_cents
+    uninc_total = 0
+
+    for tax in taxes_raw:
+        if not isinstance(tax, dict):
+            continue
+        amount = tax.get("amount")
+        if amount is None:
+            continue
+        raw_cents = minor_units(amount, tax.get("currency", currency))
+
+        multiplier = 1
+        if use_multiplier:
+            if str(tax.get("pricingFrequency") or "").upper() == "PER_NIGHT":
+                multiplier *= max(nights, 1)
+            if str(tax.get("pricingMode") or "").upper() == "PER_OCCUPANT":
+                multiplier *= max(adults, 1)
+        cents = raw_cents * multiplier
+
+        included = bool(tax.get("included", False))
+        description = str(tax.get("code") or "Tax")
+        if included:
+            # Already inside price.base: pull it back out into its own line
+            # instead of leaving it silently baked into base_cents, but never
+            # if doing so would drive base_cents negative.
+            if 0 <= cents <= working_base:
+                working_base -= cents
+                fees.append(
+                    FeeLine(
+                        kind=FeeKind.TAX,
+                        description=description,
+                        amount_cents=cents,
+                        payable=PayableWhen.UNKNOWN,
+                        included_in_advertised_total=True,
+                    )
+                )
+            else:
+                logger.warning(
+                    "normalize(amadeus): included tax %r (%s cents) would drive base "
+                    "(%s cents) negative; skipping subtraction and omitting the line",
+                    description,
+                    cents,
+                    working_base,
+                )
+        else:
+            fees.append(
+                FeeLine(
+                    kind=FeeKind.TAX,
+                    description=description,
+                    amount_cents=cents,
+                    payable=PayableWhen.UNKNOWN,
+                    included_in_advertised_total=True,
+                )
+            )
+            uninc_total += cents
+
+    return working_base, fees, uninc_total
+
+
 def _normalize_one_amadeus_offer(
     raw: RawOffer,
     hotel: Hotel,
     hotel_id: str,
     hotel_payload: dict[str, Any],
     offer: dict[str, Any],
+    query: SearchQuery,
 ) -> NormalizedOffer:
     price = offer["price"]
     currency = str(price["currency"])
     base_cents = minor_units(price["base"], currency)
-
-    fees: list[FeeLine] = []
-    tax_total_cents = 0
-    for tax in price.get("taxes") or []:
-        amount = tax.get("amount")
-        if amount is None:
-            continue
-        cents = minor_units(amount, tax.get("currency", currency))
-        included = bool(tax.get("included", False))
-        fees.append(
-            FeeLine(
-                kind=FeeKind.TAX,
-                description=str(tax.get("code") or "Tax"),
-                amount_cents=cents,
-                payable=PayableWhen.AT_BOOKING if included else PayableWhen.AT_PROPERTY,
-                included_in_advertised_total=included,
-            )
-        )
-        tax_total_cents += cents
+    taxes_raw = price.get("taxes") or []
 
     total_raw = price.get("total")
-    if total_raw is not None:
-        total_cents = minor_units(total_raw, currency)
-        delta = total_cents - (base_cents + tax_total_cents)
+    total_cents = minor_units(total_raw, currency) if total_raw is not None else None
+
+    nights = _resolve_nights(offer, query)
+    adults = _resolve_adults(offer, query)
+
+    has_multiplier_tax = any(
+        isinstance(t, dict)
+        and (
+            str(t.get("pricingFrequency") or "").upper() == "PER_NIGHT"
+            or str(t.get("pricingMode") or "").upper() == "PER_OCCUPANT"
+        )
+        for t in taxes_raw
+    )
+
+    base_cents, fees, uninc_total = _build_tax_fees(
+        taxes_raw, currency, base_cents, nights, adults, use_multiplier=True
+    )
+    if has_multiplier_tax and total_cents is not None:
+        # BUG B: verify the multiplied (per-night/per-occupant) interpretation
+        # against ground truth (price.total). If the plain, unmultiplied
+        # amounts reconcile more closely, trust those instead — Amadeus data
+        # is occasionally inconsistent about which basis a given tax amount
+        # is already expressed in.
+        alt_base, alt_fees, alt_uninc = _build_tax_fees(
+            taxes_raw, currency, minor_units(price["base"], currency), nights, adults, use_multiplier=False
+        )
+        multiplied_delta = total_cents - (base_cents + uninc_total)
+        unmultiplied_delta = total_cents - (alt_base + alt_uninc)
+        if abs(unmultiplied_delta) < abs(multiplied_delta):
+            base_cents, fees, uninc_total = alt_base, alt_fees, alt_uninc
+
+    if total_cents is not None:
+        delta = total_cents - (base_cents + uninc_total)
         if delta > 0:
             fees.append(
                 FeeLine(
                     kind=FeeKind.OTHER_MANDATORY,
-                    description="rate difference/fees",
+                    description="unitemized rate difference/fees",
                     amount_cents=delta,
-                    payable=PayableWhen.AT_BOOKING,
+                    payable=PayableWhen.UNKNOWN,
                     included_in_advertised_total=True,
                 )
             )
         elif delta < 0:
+            # Sum still exceeds total even after preferring whichever BUG B
+            # interpretation reconciles best (see above) — trust the
+            # itemization rather than fabricating a negative fee line.
             logger.warning(
                 "normalize(amadeus): offer %r total (%s) is less than base+taxes for hotel=%r; "
                 "not adding a negative fee line",
@@ -263,8 +392,8 @@ def _normalize_one_amadeus_offer(
         )
 
     policies = offer.get("policies") or {}
-    refundability = _map_refundability(policies)
-    cancel_deadline = _parse_cancel_deadline(policies)
+    cancel_deadline, has_cancel_penalty = _parse_cancellations(policies)
+    refundability = _map_refundability(policies, has_cancel_penalty)
 
     offer_id_source = f"amadeus|{hotel_id}|{offer.get('id', '')}"
     offer_id = hashlib.sha1(offer_id_source.encode("utf-8")).hexdigest()[:12]
@@ -299,7 +428,7 @@ def _normalize_one_amadeus_offer(
     )
 
 
-def _map_refundability(policies: dict[str, Any]) -> Refundability:
+def _map_refundability(policies: dict[str, Any], has_cancel_penalty: bool) -> Refundability:
     refundable = (policies.get("refundable") or {}).get("cancellationRefund")
     refundable = str(refundable or "").upper()
     if refundable == "NON_REFUNDABLE":
@@ -308,18 +437,62 @@ def _map_refundability(policies: dict[str, Any]) -> Refundability:
         return Refundability.FULLY_REFUNDABLE
     if refundable == "PARTIALLY_REFUNDABLE":
         return Refundability.PARTIALLY_REFUNDABLE
+    # BUG C hardening: Amadeus/GDS partners occasionally send a
+    # `cancellationRefund` variant that isn't one of the documented literals
+    # (e.g. "REFUNDABLE_WITH_PENALTY"). Rather than collapse straight to
+    # UNKNOWN, use the actual cancellation penalties as corroborating
+    # evidence: if the flag text still reads as refundable AND at least one
+    # cancellation window has a real (nonzero) penalty, that combination is
+    # the literal definition of partial refundability. This only fires for
+    # strings outside the exact-match branches above, so it never changes
+    # behavior for well-formed "REFUNDABLE_UP_TO_DEADLINE"/etc. responses.
+    if refundable and "REFUND" in refundable and has_cancel_penalty:
+        return Refundability.PARTIALLY_REFUNDABLE
     return Refundability.UNKNOWN
 
 
-def _parse_cancel_deadline(policies: dict[str, Any]) -> Optional[datetime]:
-    cancellations = policies.get("cancellations") or []
-    if not cancellations:
-        return None
-    deadline_str = cancellations[0].get("deadline")
-    if not deadline_str:
-        return None
-    try:
-        return datetime.fromisoformat(str(deadline_str).replace("Z", "+00:00"))
-    except ValueError:
-        logger.warning("normalize(amadeus): unparsable cancel deadline %r", deadline_str)
-        return None
+def _parse_cancellations(policies: dict[str, Any]) -> tuple[Optional[datetime], bool]:
+    """Tolerantly scan every cancellation window (not just the first).
+
+    Amadeus can (and does) return multiple tiered cancellation windows, e.g.
+    a lenient one further out and a stricter one closer to check-in. Blindly
+    taking cancellations[0] (BUG C) can surface the wrong deadline. We
+    instead take the EARLIEST well-formed deadline across all entries — the
+    soonest date the guest actually needs to act by — and separately note
+    whether any entry carries a real cancellation penalty (nonzero `amount`
+    or `numberOfNights`), which `_map_refundability` uses as corroborating
+    evidence for ambiguous refundability flags. A malformed entry (wrong
+    type, unparsable deadline, non-numeric penalty) is skipped rather than
+    aborting the whole offer.
+    """
+    cancellations = policies.get("cancellations")
+    if not isinstance(cancellations, list):
+        return None, False
+
+    earliest: Optional[datetime] = None
+    has_penalty = False
+    for c in cancellations:
+        if not isinstance(c, dict):
+            continue
+
+        deadline_str = c.get("deadline")
+        if deadline_str:
+            try:
+                parsed = datetime.fromisoformat(str(deadline_str).replace("Z", "+00:00"))
+            except ValueError:
+                logger.warning("normalize(amadeus): unparsable cancel deadline %r", deadline_str)
+            else:
+                if earliest is None or parsed < earliest:
+                    earliest = parsed
+
+        for penalty_key in ("amount", "numberOfNights"):
+            value = c.get(penalty_key)
+            if value is None:
+                continue
+            try:
+                if float(value) > 0:
+                    has_penalty = True
+            except (TypeError, ValueError):
+                continue
+
+    return earliest, has_penalty

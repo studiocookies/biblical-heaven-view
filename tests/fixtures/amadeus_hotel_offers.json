@@ -243,12 +243,13 @@
           "price": {
             "currency": "USD",
             "base": "255.00",
-            "total": "285.60",
+            "total": "291.60",
             "variations": {
               "average": {"base": "85.00"}
             },
             "taxes": [
-              {"code": "TOTAL_TAX", "included": false, "amount": "30.60", "currency": "USD"}
+              {"code": "TOTAL_TAX", "included": false, "amount": "30.60", "currency": "USD"},
+              {"code": "CITY_TAX", "included": false, "amount": "1.00", "currency": "USD", "pricingFrequency": "PER_NIGHT", "pricingMode": "PER_OCCUPANT"}
             ]
           },
           "policies": {
