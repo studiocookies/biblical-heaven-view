@@ -347,7 +347,13 @@ def _normalize_one_amadeus_offer(
             base_cents, fees, uninc_total = alt_base, alt_fees, alt_uninc
 
     if total_cents is not None:
-        delta = total_cents - (base_cents + uninc_total)
+        # NOTE: reconcile against ALL fee lines here (not just uninc_total),
+        # because an included=true tax's amount was moved from base_cents
+        # into a fee line above — base_cents + that fee line still equals the
+        # original (pre-subtraction) base, so it must be counted here or an
+        # already-balanced offer looks like it has a positive delta.
+        fee_sum = sum(f.amount_cents for f in fees)
+        delta = total_cents - (base_cents + fee_sum)
         if delta > 0:
             fees.append(
                 FeeLine(
