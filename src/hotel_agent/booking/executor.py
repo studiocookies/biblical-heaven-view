@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 
 from pydantic import BaseModel
 
+from hotel_agent.currency import format_money
 from hotel_agent.models import (
     BookingPlan,
     Channel,
@@ -49,8 +50,11 @@ class ApprovalError(Exception):
     """Approval missing, stale, or not matching the plan."""
 
 
-def _plan_id(offer: NormalizedOffer, card_id: str) -> str:
-    return "plan-" + hashlib.sha256(f"{offer.offer_id}|{card_id}".encode()).hexdigest()[:12]
+def _plan_id(offer: NormalizedOffer, card_id: str, due_now: int, due_later: int) -> str:
+    """Plan identity covers the amounts, so a re-plan after a price change is a
+    distinct plan rather than a stale-row collision."""
+    material = f"{offer.offer_id}|{card_id}|{due_now}|{due_later}|{offer.points_cost or 0}"
+    return "plan-" + hashlib.sha256(material.encode()).hexdigest()[:12]
 
 
 class BookingExecutor(abc.ABC):
@@ -73,7 +77,7 @@ class BookingExecutor(abc.ABC):
 
         steps = self._steps(offer, card_label, due_now, due_later)
         return BookingPlan(
-            plan_id=_plan_id(offer, card_id),
+            plan_id=_plan_id(offer, card_id, due_now, due_later),
             offer=offer,
             card_id=card_id,
             total_due_now_cents=due_now,
@@ -139,8 +143,7 @@ class ManualBookingExecutor(BookingExecutor):
 
 
 def _money(cents: int, currency: str = "USD") -> str:
-    sign = "-" if cents < 0 else ""
-    return f"{sign}{currency} {abs(cents) / 100:,.2f}"
+    return format_money(cents, currency)
 
 
 def make_approval(plan: BookingPlan, token: str) -> ExplicitApproval:

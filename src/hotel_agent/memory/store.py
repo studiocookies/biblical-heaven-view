@@ -10,11 +10,14 @@ happens to contain something that looks like a PAN or CVV.
 
 from __future__ import annotations
 
+import json
 import pathlib
 import re
 import sqlite3
 from datetime import datetime, timezone
-from typing import Optional, Union
+from typing import Any, Optional, Union
+
+from pydantic import BaseModel
 
 from hotel_agent.models import BookingPlan, Recommendation, SearchQuery, UserProfile
 
@@ -22,12 +25,28 @@ from hotel_agent.models import BookingPlan, Recommendation, SearchQuery, UserPro
 # Redaction
 # ---------------------------------------------------------------------------
 
-# 13-19 consecutive digits, allowing space/dash separators between digit
-# groups (e.g. "4111 1111 1111 1111", "4111-1111-1111-1111", "4111111111111111").
-# We match on a run of digit-groups separated by optional space/dash, then
-# check the total digit count so we don't clobber unrelated long numbers
-# such as a 10-digit phone number or a 7-digit points balance.
-_PAN_CANDIDATE_RE = re.compile(r"(?<!\d)(?:\d[ -]?){13,19}(?!\d)")
+# 13-19 consecutive digits, allowing space/dash/dot/slash/no-break-space and
+# various unicode hyphen separators between digit groups (e.g.
+# "4111 1111 1111 1111", "4111-1111-1111-1111", "4111111111111111",
+# "4111.1111.1111.1111", "4111/1111/1111/1111", using U+00A0/U+2011/U+2012/
+# U+2013 as the separator). We match on a run of digit-groups separated by an
+# optional single separator character, then check the total digit count so we
+# don't clobber unrelated long numbers such as a 10-digit phone number or a
+# 7-digit points balance.
+_PAN_SEP_CHARS = [
+    " ",        # ASCII space
+    "-",        # ASCII hyphen-minus
+    ".",        # period
+    "/",        # slash
+    "\u00a0",  # no-break space
+    "\u2011",  # non-breaking hyphen
+    "\u2012",  # figure dash
+    "\u2013",  # en dash
+]
+_PAN_SEP_CLASS = "[" + "".join(re.escape(c) for c in _PAN_SEP_CHARS) + "]"
+_PAN_CANDIDATE_RE = re.compile(
+    r"(?<!\d)(?:\d" + _PAN_SEP_CLASS + r"?){13,19}(?!\d)"
+)
 
 # CVV/CSC markers followed by a 3-4 digit code, e.g. "cvv: 123", "CVC=1234".
 _CVV_RE = re.compile(
@@ -39,12 +58,15 @@ _CVV_PLACEHOLDER_TEMPLATE = r"\1: [REDACTED-CVV]"
 
 
 def redact(text: str) -> str:
-    """Mask anything that looks like a card PAN or a CVV/CSC code.
+    """Mask anything that looks like a card PAN or a CVV/CSC code, in a
+    plain string (NOT a serialized-JSON blob — see `_redact_model_json` for
+    that, which is what persistence actually uses).
 
-    - PAN: 13-19 consecutive digits, digits may be separated by single
-      spaces or dashes (e.g. "4111 1111 1111 1111", "4111-1111-1111-1111").
-      Shorter/longer digit runs (phone numbers, points balances, IDs) are
-      left untouched.
+    - PAN: 13-19 consecutive digits, digits may be separated by a space,
+      ASCII hyphen, '.', '/', no-break space (U+00A0), or one of the unicode
+      hyphen variants (U+2011/U+2012/U+2013) between groups (e.g.
+      "4111 1111 1111 1111", "4111-1111-1111-1111"). Shorter/longer digit
+      runs (phone numbers, points balances, IDs) are left untouched.
     - CVV: a "cvv"/"cvc"/"csc" marker (optionally followed by a digit, e.g.
       "cvv2") immediately followed by a 3-4 digit code.
     """
@@ -61,6 +83,32 @@ def redact(text: str) -> str:
     redacted = _PAN_CANDIDATE_RE.sub(_pan_sub, text)
     redacted = _CVV_RE.sub(_CVV_PLACEHOLDER_TEMPLATE, redacted)
     return redacted
+
+
+def _redact_value(value: Any) -> Any:
+    """Recursively walk a JSON-compatible value (as produced by
+    `model_dump(mode="json")`), applying `redact()` only to string leaves
+    (and dict keys, defensively). Numbers/bools/None pass through untouched
+    so the result always remains valid, re-validatable JSON."""
+    if isinstance(value, str):
+        return redact(value)
+    if isinstance(value, dict):
+        return {redact(k) if isinstance(k, str) else k: _redact_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_redact_value(v) for v in value]
+    if isinstance(value, tuple):
+        return [_redact_value(v) for v in value]
+    # int, float, bool, None - left untouched
+    return value
+
+
+def _redact_model_json(model: BaseModel) -> str:
+    """Serialize a pydantic model to a redacted JSON string, redacting only
+    string values (never numerics), so the output is always valid JSON the
+    same model can re-validate via `model_validate_json`."""
+    data = model.model_dump(mode="json")
+    redacted = _redact_value(data)
+    return json.dumps(redacted)
 
 
 def _now_iso() -> str:
@@ -128,7 +176,7 @@ class MemoryStore:
         return UserProfile.model_validate_json(row[0])
 
     def save_profile(self, p: UserProfile) -> None:
-        payload = redact(p.model_dump_json())
+        payload = _redact_model_json(p)
         now = _now_iso()
         self._conn.execute(
             """
@@ -145,7 +193,7 @@ class MemoryStore:
     # -- searches -------------------------------------------------------
 
     def record_search(self, q: SearchQuery) -> int:
-        payload = redact(q.model_dump_json())
+        payload = _redact_model_json(q)
         cur = self._conn.execute(
             "INSERT INTO searches (json, created_at) VALUES (?, ?)",
             (payload, _now_iso()),
@@ -162,7 +210,7 @@ class MemoryStore:
     # -- recommendations --------------------------------------------------
 
     def record_recommendation(self, r: Recommendation) -> int:
-        payload = redact(r.model_dump_json())
+        payload = _redact_model_json(r)
         cur = self._conn.execute(
             "INSERT INTO recommendations (json, created_at) VALUES (?, ?)",
             (payload, _now_iso()),
@@ -179,7 +227,7 @@ class MemoryStore:
     # -- bookings ---------------------------------------------------------
 
     def record_booking(self, plan: BookingPlan, status: str) -> int:
-        payload = redact(plan.model_dump_json())
+        payload = _redact_model_json(plan)
         now = _now_iso()
         cur = self._conn.execute(
             "INSERT INTO bookings (plan_json, status, created_at, updated_at) VALUES (?, ?, ?, ?)",

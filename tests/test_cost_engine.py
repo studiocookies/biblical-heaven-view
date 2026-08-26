@@ -508,7 +508,7 @@ def test_earn_vs_burn_bad_redemption_uses_cash_matches_worked_example():
     assert verdict.redemption_cpp_x100 == 156
     assert verdict.baseline_cpp_x100 == 170  # 1.70cpp
     assert verdict.use_points is False
-    assert "pay cash" in verdict.rationale
+    assert "pay cash" in verdict.rationale.lower()
 
 
 def test_earn_vs_burn_use_points_false_when_balance_insufficient():

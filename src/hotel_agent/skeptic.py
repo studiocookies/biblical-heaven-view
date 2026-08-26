@@ -24,6 +24,8 @@ from typing import Optional
 
 import httpx
 
+from hotel_agent.currency import format_money
+
 from hotel_agent.models import (
     Channel,
     FeeKind,
@@ -43,8 +45,8 @@ logger = logging.getLogger(__name__)
 # helpers
 # ---------------------------------------------------------------------------
 
-def _dollars(cents: int) -> str:
-    return f"${cents / 100:,.2f}"
+def _dollars(cents: int, currency: str = "USD") -> str:
+    return format_money(cents, currency)
 
 
 def _same_hotel(a: str, b: str) -> bool:
@@ -73,7 +75,10 @@ def _cheapest_refundable_alt_same_hotel(
         if opt.offer.offer_id != best.offer.offer_id
         and _same_hotel(opt.offer.hotel.name, best.offer.hotel.name)
         and opt.offer.refundability == Refundability.FULLY_REFUNDABLE
-        and opt.cost.effective_cents <= best.cost.effective_cents * 1.15
+        # integer margin on |best| so the tolerance doesn't invert when the
+        # effective cost is negative (large credits can make it so)
+        and opt.cost.effective_cents
+        <= best.cost.effective_cents + abs(best.cost.effective_cents) * 15 // 100
     ]
     return _cheapest_matching(candidates)
 
@@ -87,7 +92,8 @@ def _cheapest_direct_alt_same_hotel(
         if opt.offer.offer_id != best.offer.offer_id
         and opt.offer.channel == Channel.DIRECT
         and _same_hotel(opt.offer.hotel.name, best.offer.hotel.name)
-        and opt.cost.effective_cents <= best.cost.effective_cents * 1.05
+        and opt.cost.effective_cents
+        <= best.cost.effective_cents + abs(best.cost.effective_cents) * 5 // 100
     ]
     return _cheapest_matching(candidates)
 
@@ -110,8 +116,8 @@ def _check_better_rate(rec: Recommendation, best: RankedOption) -> list[SkepticF
                     category="better_rate",
                     message=(
                         f"Ranker missed a better rate: offer {opt.offer.offer_id} has "
-                        f"effective cost {_dollars(opt.cost.effective_cents)} vs. the "
-                        f"chosen {_dollars(best.cost.effective_cents)}."
+                        f"effective cost {_dollars(opt.cost.effective_cents, opt.offer.currency)} vs. the "
+                        f"chosen {_dollars(best.cost.effective_cents, best.offer.currency)}."
                     ),
                     offer_id=opt.offer.offer_id,
                 )
@@ -135,7 +141,7 @@ def _check_missed_fees(best: RankedOption) -> list[SkepticFinding]:
                 severity=SkepticSeverity.WARNING,
                 category="missed_fee",
                 message=(
-                    f"Advertised price excludes {_dollars(total)} payable at property "
+                    f"Advertised price excludes {_dollars(total, offer.currency)} payable at property "
                     "or otherwise not included in the advertised total."
                 ),
                 offer_id=offer.offer_id,
@@ -149,7 +155,7 @@ def _check_missed_fees(best: RankedOption) -> list[SkepticFinding]:
                 severity=SkepticSeverity.WARNING,
                 category="missed_fee",
                 message=(
-                    f"No tax line items found on a {_dollars(offer.base_cents)} base "
+                    f"No tax line items found on a {_dollars(offer.base_cents, offer.currency)} base "
                     "rate — taxes are likely missing from the data."
                 ),
                 offer_id=offer.offer_id,
@@ -200,8 +206,8 @@ def _check_cancellation(rec: Recommendation, best: RankedOption) -> list[Skeptic
                         category="cancellation_risk",
                         message=(
                             "A fully refundable option at the same hotel is available "
-                            f"for {_dollars(alt.cost.effective_cents)} ({sign}"
-                            f"{_dollars(abs(delta))} vs. the non-refundable pick)."
+                            f"for {_dollars(alt.cost.effective_cents, alt.offer.currency)} ({sign}"
+                            f"{_dollars(abs(delta), alt.offer.currency)} vs. the non-refundable pick)."
                         ),
                         offer_id=alt.offer.offer_id,
                     )
@@ -228,7 +234,7 @@ def _check_loyalty(
                         message=(
                             "Booking via OTA forfeits points/elite credit — a direct "
                             f"rate at {direct_alt.offer.hotel.name} is available for "
-                            f"{_dollars(direct_alt.cost.effective_cents)} (within 5% of "
+                            f"{_dollars(direct_alt.cost.effective_cents, direct_alt.offer.currency)} (within 5% of "
                             "the chosen price)."
                         ),
                         offer_id=direct_alt.offer.offer_id,
@@ -324,8 +330,8 @@ def _check_data_quality(rec: Recommendation) -> list[SkepticFinding]:
                     category="data_quality",
                     message=(
                         f"Offer {opt.offer.offer_id} has a suspicious cost of "
-                        f"{_dollars(opt.cost.effective_cents)} effective / "
-                        f"{_dollars(opt.offer.total_cash_cents)} cash — looks like bad "
+                        f"{_dollars(opt.cost.effective_cents, opt.offer.currency)} effective / "
+                        f"{_dollars(opt.offer.total_cash_cents, opt.offer.currency)} cash — looks like bad "
                         "or incomplete data."
                     ),
                     offer_id=opt.offer.offer_id,
@@ -384,8 +390,14 @@ def apply_findings(
         f.category == "cancellation_risk" and f.severity == SkepticSeverity.BLOCKER
         for f in findings
     ):
+        budget = out.query.max_total_cents
         refundable_opts = [
-            o for o in out.options if o.offer.refundability == Refundability.FULLY_REFUNDABLE
+            o for o in out.options
+            if o.offer.refundability == Refundability.FULLY_REFUNDABLE
+            # never auto-promote an award (balance/valuation issues need their
+            # own review) or anything over the user's cash budget
+            and not o.offer.is_award
+            and (budget is None or o.offer.total_cash_cents <= budget)
         ]
         if refundable_opts:
             cheapest = min(refundable_opts, key=lambda o: o.cost.effective_cents)
@@ -393,8 +405,8 @@ def apply_findings(
             out.best = cheapest
             revised = True
             notes.append(
-                f"Query required a refundable rate; promoted {cheapest.offer.offer_id!r} "
-                f"over {old_best_id!r}, which was not fully refundable."
+                f"Promoted fully refundable option {cheapest.offer.offer_id!r} over "
+                f"{old_best_id!r} due to a blocking cancellation-risk finding."
             )
         # else: no refundable alternative exists — leave best as-is, BLOCKER stays
         # visible in skeptic_findings for the user to see.
@@ -409,7 +421,10 @@ def apply_findings(
             cash_opts = [
                 o
                 for o in out.options
-                if o.offer.channel != Channel.AWARD
+                # award-ness is defined by points_cost (is_award), not channel:
+                # an award mislabelled with a non-AWARD channel must never be
+                # selected as its own "cash twin"
+                if not o.offer.is_award
                 and _same_hotel(o.offer.hotel.name, best_before.offer.hotel.name)
             ]
             if cash_opts:

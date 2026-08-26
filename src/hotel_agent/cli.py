@@ -19,6 +19,7 @@ import sys
 from datetime import date
 
 from hotel_agent.booking.executor import ApprovalError, ManualBookingExecutor, make_approval
+from hotel_agent.currency import format_money
 from hotel_agent.cost_engine import best_card_cost
 from hotel_agent.memory.store import MemoryStore
 from hotel_agent.models import (
@@ -38,20 +39,27 @@ from hotel_agent.recommend import recommend, run_search
 
 
 def _m(cents: int, currency: str = "USD") -> str:
-    sign = "-" if cents < 0 else ""
-    return f"{sign}{currency} {abs(cents) / 100:,.2f}"
+    return format_money(cents, currency)
 
 
 # ---------------------------------------------------------------------------
 # Report rendering
 # ---------------------------------------------------------------------------
 
-def render(rec: Recommendation, notes: list[str], top_n: int = 5) -> str:
+def render(rec: Recommendation, notes: list[str] | None = None, top_n: int = 5) -> str:
     out: list[str] = []
+    notes = notes if notes is not None else rec.provider_notes
     if rec.contains_fixture_data:
+        all_fixture = all(
+            o.offer.data_source == DataSource.FIXTURE for o in rec.options
+        ) if rec.options else True
         out.append("=" * 62)
-        out.append("!!  MOCK DATA — no live provider was available.            !!")
-        out.append("!!  These are NOT real prices. Do not book from this run.  !!")
+        if all_fixture:
+            out.append("!!  MOCK DATA — no live provider was available.            !!")
+            out.append("!!  These are NOT real prices. Do not book from this run.  !!")
+        else:
+            out.append("!!  MIXED DATA — some offers below are MOCK fixtures.      !!")
+            out.append("!!  Mock-sourced prices are NOT real; check data sources.  !!")
         out.append("=" * 62)
     q = rec.query
     out.append(f"\nStay: {q.destination} | {q.check_in} -> {q.check_out} "
@@ -126,7 +134,9 @@ def cmd_search(args: argparse.Namespace) -> int:
         max_total_cents=int(args.budget * 100) if args.budget else None,
     )
     offers, notes = run_search(query, allow_fixtures=not args.no_mock)
-    rec = recommend(query, profile, offers, run_llm_skeptic=args.llm_skeptic)
+    rec = recommend(
+        query, profile, offers, run_llm_skeptic=args.llm_skeptic, provider_notes=notes
+    )
     store.record_search(query)
     store.record_recommendation(rec)
     print(render(rec, notes))
@@ -143,7 +153,8 @@ def cmd_history(args: argparse.Namespace) -> int:
     if not rows:
         print("  (none)")
     for bid, plan, status in rows:
-        print(f"  #{bid} [{status}] {plan.offer.hotel.name} due-now {_m(plan.total_due_now_cents)}")
+        print(f"  #{bid} [{status}] {plan.offer.hotel.name} due-now "
+              f"{_m(plan.total_due_now_cents, plan.offer.currency)}")
     return 0
 
 
@@ -215,11 +226,21 @@ def cmd_book(args: argparse.Namespace) -> int:
 
     if args.book_cmd == "confirm":
         rows = store.bookings()
-        match = next(((bid, plan) for bid, plan, _ in rows if plan.plan_id == args.plan), None)
+        # Newest matching row wins: a re-plan after a price change must not
+        # resolve to a stale plan the user wasn't shown.
+        match = next(
+            ((bid, plan) for bid, plan, _ in reversed(rows) if plan.plan_id == args.plan),
+            None,
+        )
         if match is None:
             print(f"plan {args.plan!r} not found — run `book plan` first.")
             return 1
         bid, plan = match
+        if plan.offer.data_source == DataSource.FIXTURE:
+            print("=" * 62)
+            print("!!  MOCK DATA DRY RUN — this plan is based on fixture prices  !!")
+            print("!!  that are NOT real. Nothing below reflects a live rate.    !!")
+            print("=" * 62)
         try:
             result = executor.execute(plan, make_approval(plan, args.token))
         except ApprovalError as exc:

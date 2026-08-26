@@ -14,6 +14,8 @@ explicit floor-division formula. Never floats.
 
 from __future__ import annotations
 
+from hotel_agent.currency import exponent as currency_exponent
+from hotel_agent.currency import format_money
 from hotel_agent.models import (
     Channel,
     CostLine,
@@ -84,11 +86,63 @@ def _hotel_points_earned_line(
     return line, value_cents
 
 
+def _card_reward_value(offer: NormalizedOffer, card: PaymentCard) -> tuple[int, int, str]:
+    """(value_cents, multiplier_x100, perk_name) for charging this offer's
+    cash to this card — the best applicable earn_multiplier perk, else 1x."""
+    mult_x100 = 100
+    best_perk_name = "base rate (1x)"
+    for perk in card.perks:
+        if perk.kind != "earn_multiplier":
+            continue
+        if not _perk_applies(perk.applies_channel, perk.applies_portal, offer):
+            continue
+        if perk.earn_multiplier_x100 > mult_x100:
+            mult_x100 = perk.earn_multiplier_x100
+            best_perk_name = perk.name
+    total_cash = offer.total_cash_cents
+    value_cents = total_cash * mult_x100 * card.reward_value_cpp_x100 // 1_000_000
+    return value_cents, mult_x100, best_perk_name
+
+
 def compute_effective_cost(
     offer: NormalizedOffer, card: PaymentCard, profile: UserProfile
 ) -> EffectiveCost:
     lines: list[CostLine] = []
     total_cash = offer.total_cash_cents
+
+    # PARTIAL: reward/points math is calibrated for exponent-2 currencies
+    # (minor unit == cent) and treats non-USD majors at par with USD for
+    # per-$ earn rates. For zero/three-decimal currencies (JPY, KWD, ...)
+    # the per-dollar math would be off by 100x, so we honestly skip all
+    # adjustments and rank on true cash total alone.
+    if currency_exponent(offer.currency) != 2:
+        lines.append(
+            CostLine(
+                label="Cash total (room + taxes + fees)",
+                amount_cents=total_cash,
+                note=f"true total {format_money(total_cash, offer.currency)}",
+            )
+        )
+        lines.append(
+            CostLine(
+                label=f"PARTIAL: rewards/points not valued for {offer.currency}",
+                amount_cents=0,
+                note=(
+                    f"{offer.currency} has a non-2 minor-unit exponent and no FX "
+                    "conversion is implemented; card/loyalty adjustments skipped."
+                ),
+            )
+        )
+        return EffectiveCost(
+            offer_id=offer.offer_id,
+            card_id=card.card_id,
+            lines=lines,
+            effective_cents=total_cash,
+            cash_outlay_cents=total_cash,
+            points_spent=(offer.points_cost or 0) if offer.is_award else 0,
+            points_earned_value_cents=0,
+            redemption_cpp_x100=None,
+        )
 
     lines.append(
         CostLine(
@@ -121,18 +175,7 @@ def compute_effective_cost(
         )
 
     # -- Card rewards earned: best applicable earn_multiplier perk, else 1x --
-    mult_x100 = 100
-    best_perk_name = "base rate (1x)"
-    for perk in card.perks:
-        if perk.kind != "earn_multiplier":
-            continue
-        if not _perk_applies(perk.applies_channel, perk.applies_portal, offer):
-            continue
-        if perk.earn_multiplier_x100 > mult_x100:
-            mult_x100 = perk.earn_multiplier_x100
-            best_perk_name = perk.name
-
-    card_value_cents = total_cash * mult_x100 * card.reward_value_cpp_x100 // 1_000_000
+    card_value_cents, mult_x100, best_perk_name = _card_reward_value(offer, card)
     lines.append(
         CostLine(
             label="Card rewards earned",
@@ -279,7 +322,20 @@ def earn_vs_burn(
         )
         forgone_pts = cash_offer.base_cents * earn_rate_x100 // (100 * 100)
 
-    net_saved_cents = cents_saved - forgone_value_cents
+    # Forgone CARD rewards: paying cash charges more to the card than the
+    # award's cash component does, so burning points also forgoes the card
+    # rewards on that difference. Use the card the ranker would pick for the
+    # cash offer, so this verdict and the ranking agree.
+    chosen_cost = best_card_cost(cash_offer, profile)
+    card = next(
+        (c for c in profile.cards if c.card_id == chosen_cost.card_id),
+        _cash_fallback_card(),
+    )
+    cash_card_value, _, _ = _card_reward_value(cash_offer, card)
+    award_card_value, _, _ = _card_reward_value(award_offer, card)
+    forgone_card_cents = max(0, cash_card_value - award_card_value)
+
+    net_saved_cents = cents_saved - forgone_value_cents - forgone_card_cents
     # Inverse of the points -> cents scaling above: cpp_x100 = cents*100/points.
     redemption_cpp_x100 = net_saved_cents * 100 // points_cost
 
@@ -297,15 +353,16 @@ def earn_vs_burn(
         use_points = cpp_favors_points and sufficient
         if not sufficient:
             balance_note = (
-                f" — but balance is insufficient (have {account.points_balance:,}, "
-                f"need {points_cost:,} pts), so pay cash regardless of cpp"
+                f" — balance insufficient (have {account.points_balance:,}, "
+                f"need {points_cost:,} pts)"
             )
 
-    verdict_word = "use points" if use_points else "pay cash"
+    verdict_word = "USE POINTS" if use_points else "PAY CASH"
     rationale = (
         f"Redeeming {points_cost:,} pts saves ${cents_saved / 100:.0f} gross, "
-        f"minus ${forgone_value_cents / 100:.2f} of forgone earning "
-        f"({forgone_pts} pts not earned) = ${net_saved_cents / 100:.2f} net = "
+        f"minus ${forgone_value_cents / 100:.2f} forgone hotel points "
+        f"({forgone_pts} pts) and ${forgone_card_cents / 100:.2f} forgone card "
+        f"rewards = ${net_saved_cents / 100:.2f} net = "
         f"{redemption_cpp_x100 / 100:.2f}cpp vs {baseline_cpp_x100 / 100:.2f}cpp "
         f"baseline{balance_note} — {verdict_word}"
     )

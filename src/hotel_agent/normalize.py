@@ -22,12 +22,13 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any, Optional
 
 from pydantic import ValidationError
 
+from hotel_agent.currency import CURRENCY_EXPONENTS, exponent
 from hotel_agent.models import (
     Channel,
     DataSource,
@@ -47,17 +48,10 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Currency minor-unit exponents (ISO 4217). Anything not listed defaults to 2.
+# Currency minor-unit exponents (ISO 4217). Sourced from hotel_agent.currency
+# (the frozen, shared source of truth); `CURRENCY_EXPONENTS` is re-exported
+# here only for back-compat with code/tests that import it from this module.
 # ---------------------------------------------------------------------------
-
-CURRENCY_EXPONENTS: dict[str, int] = {
-    # zero-decimal currencies
-    "JPY": 0, "KRW": 0, "VND": 0, "CLP": 0, "ISK": 0, "HUF": 0,
-    "BIF": 0, "DJF": 0, "GNF": 0, "KMF": 0, "MGA": 0, "PYG": 0,
-    "RWF": 0, "UGX": 0, "VUV": 0, "XAF": 0, "XOF": 0, "XPF": 0,
-    # three-decimal currencies
-    "BHD": 3, "JOD": 3, "KWD": 3, "OMR": 3, "TND": 3,
-}
 
 
 def minor_units(amount: str | float | int, currency: str) -> int:
@@ -66,9 +60,9 @@ def minor_units(amount: str | float | int, currency: str) -> int:
     Uses `decimal.Decimal` (never float) so e.g. "45.10" USD -> 4510, and
     a zero-decimal currency like JPY treats "1500" as 1500 (not 150000).
     """
-    exponent = CURRENCY_EXPONENTS.get((currency or "").upper(), 2)
+    exp = exponent(currency or "")
     value = Decimal(str(amount))
-    scaled = value * (Decimal(10) ** exponent)
+    scaled = value * (Decimal(10) ** exp)
     return int(scaled.to_integral_value(rounding="ROUND_HALF_UP"))
 
 
@@ -119,7 +113,7 @@ def normalize(raw_offers: list[RawOffer], query: SearchQuery) -> list[Normalized
         if raw.provider == "fixtures":
             offers = _normalize_fixture_offer(raw)
         elif raw.provider == "amadeus":
-            offers = _normalize_amadeus_item(raw)
+            offers = _normalize_amadeus_item(raw, query)
         else:
             logger.warning("normalize: unknown provider %r, skipping raw offer", raw.provider)
             offers = []
@@ -161,7 +155,7 @@ def _normalize_fixture_offer(raw: RawOffer) -> list[NormalizedOffer]:
 # amadeus
 # ---------------------------------------------------------------------------
 
-def _normalize_amadeus_item(raw: RawOffer) -> list[NormalizedOffer]:
+def _normalize_amadeus_item(raw: RawOffer, query: SearchQuery) -> list[NormalizedOffer]:
     item = raw.payload or {}
     hotel_payload = item.get("hotel") or {}
 
@@ -182,7 +176,7 @@ def _normalize_amadeus_item(raw: RawOffer) -> list[NormalizedOffer]:
     results: list[NormalizedOffer] = []
     for offer in item.get("offers") or []:
         try:
-            results.append(_normalize_one_amadeus_offer(raw, hotel, hotel_id, hotel_payload, offer))
+            results.append(_normalize_one_amadeus_offer(raw, hotel, hotel_id, hotel_payload, offer, query))
         except (KeyError, TypeError, ValueError, InvalidOperation, ValidationError) as exc:
             logger.warning(
                 "normalize(amadeus): skipping malformed offer id=%r for hotel=%r: %s",

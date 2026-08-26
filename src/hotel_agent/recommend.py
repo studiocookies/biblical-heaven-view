@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 from hotel_agent import skeptic as skeptic_mod
 from hotel_agent.cost_engine import best_card_cost, earn_vs_burn
+from hotel_agent.currency import format_money
 from hotel_agent.models import (
     Channel,
     DataSource,
@@ -20,6 +21,8 @@ from hotel_agent.models import (
     RankedOption,
     Recommendation,
     SearchQuery,
+    SkepticFinding,
+    SkepticSeverity,
     UserProfile,
 )
 from hotel_agent.normalize import normalize
@@ -75,14 +78,52 @@ def run_search(
 
 
 def _budget_filter(offers: list[NormalizedOffer], query: SearchQuery) -> list[NormalizedOffer]:
+    """Cash budget applies to actual cash outlay for every offer. For awards
+    total_cash_cents is their cash component (taxes/copay), so an award fits
+    the budget iff its cash due fits — points are budgeted separately by the
+    earn-vs-burn logic, not silently exempted."""
     if query.max_total_cents is None:
         return offers
-    kept = []
+    return [o for o in offers if o.total_cash_cents <= query.max_total_cents]
+
+
+def _currency_partition(
+    offers: list[NormalizedOffer], query: SearchQuery
+) -> tuple[list[NormalizedOffer], list[SkepticFinding]]:
+    """Effective costs are integer minor units in each offer's own currency —
+    ranking across currencies would compare bare numbers. No FX conversion is
+    implemented (PARTIAL), so rank within one currency and disclose the rest.
+
+    Prefer the query currency; if no offer matches it, use the currency with
+    the most offers (deterministic tie-break) so the user still gets results.
+    """
+    if not offers:
+        return offers, []
+    by_cur: dict[str, list[NormalizedOffer]] = {}
     for o in offers:
-        # Awards are judged on their cash component; cash offers on true total.
-        if o.is_award or o.total_cash_cents <= query.max_total_cents:
-            kept.append(o)
-    return kept
+        by_cur.setdefault(o.currency, []).append(o)
+    if query.currency in by_cur:
+        chosen = query.currency
+    else:
+        chosen = max(by_cur, key=lambda c: (len(by_cur[c]), c))
+    findings: list[SkepticFinding] = []
+    excluded = sum(len(v) for c, v in by_cur.items() if c != chosen)
+    if excluded:
+        findings.append(SkepticFinding(
+            severity=SkepticSeverity.INFO,
+            category="data_quality",
+            message=(
+                f"{excluded} offer(s) priced in other currencies were excluded from "
+                f"ranking (comparing in {chosen} only — no FX conversion implemented)."
+            ),
+        ))
+    if chosen != query.currency:
+        findings.append(SkepticFinding(
+            severity=SkepticSeverity.INFO,
+            category="data_quality",
+            message=f"No offers in {query.currency}; ranking in {chosen} instead.",
+        ))
+    return by_cur[chosen], findings
 
 
 def _build_earn_vs_burn(
@@ -93,7 +134,9 @@ def _build_earn_vs_burn(
     for award in awards:
         cash_twins = [
             o for o in offers
-            if not o.is_award and o.hotel.name == award.hotel.name and o.currency == award.currency
+            if not o.is_award
+            and o.hotel.name.casefold() == award.hotel.name.casefold()
+            and o.currency == award.currency
         ]
         if not cash_twins:
             continue
@@ -110,8 +153,10 @@ def recommend(
     profile: UserProfile,
     offers: list[NormalizedOffer],
     run_llm_skeptic: bool = False,
+    provider_notes: list[str] | None = None,
 ) -> Recommendation:
     offers = _budget_filter(offers, query)
+    offers, currency_findings = _currency_partition(offers, query)
 
     options: list[RankedOption] = []
     for offer in offers:
@@ -134,19 +179,36 @@ def recommend(
         best=options[0] if options else None,
         earn_vs_burn=_build_earn_vs_burn(offers, profile),
         contains_fixture_data=any(o.data_source == DataSource.FIXTURE for o in offers),
+        provider_notes=list(provider_notes or []),
         generated_at=datetime.now(timezone.utc),
     )
 
-    # Skeptic pass — always runs before the user sees anything.
-    findings = skeptic_mod.review(rec, profile)
+    # Deterministic skeptic pass — always runs before the user sees anything.
+    # Only deterministic findings may drive a revision.
+    findings = skeptic_mod.review(rec, profile) + currency_findings
+    rec = skeptic_mod.apply_findings(rec, findings, profile)
+
+    if rec.revised:
+        # Re-review the revised pick so problems with the *new* best (fees,
+        # balances, cancellation) are surfaced too — but don't revise again
+        # (one revision round; further blockers stay visible to the user).
+        seen = {(f.severity, f.category, f.message) for f in rec.skeptic_findings}
+        for f in skeptic_mod.review(rec, profile):
+            if (f.severity, f.category, f.message) not in seen:
+                rec.skeptic_findings.append(f)
+
     if run_llm_skeptic:
+        # LLM second opinion is advisory only: its findings are shown but can
+        # never re-rank or change the pick (model output must not steer the
+        # deterministic revision path).
         llm = skeptic_mod.LlmSkeptic()
         ok, reason = llm.is_available()
         if ok:
-            findings.extend(llm.review(rec, profile))
+            for f in llm.review(rec, profile):
+                f.message = "[LLM second opinion] " + f.message
+                rec.skeptic_findings.append(f)
         else:
             log.info("LLM skeptic skipped: %s", reason)
-    rec = skeptic_mod.apply_findings(rec, findings, profile)
     return rec
 
 
@@ -166,5 +228,4 @@ def _rationale(opt: RankedOption) -> str:
 
 
 def _m(cents: int, currency: str) -> str:
-    sign = "-" if cents < 0 else ""
-    return f"{sign}{currency} {abs(cents) / 100:,.2f}"
+    return format_money(cents, currency)

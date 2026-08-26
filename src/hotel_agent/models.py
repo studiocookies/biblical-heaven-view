@@ -193,7 +193,10 @@ class CardPerk(BaseModel):
     name: str                              # e.g. "$50 quarterly hotel credit"
     kind: str                              # "statement_credit" | "earn_multiplier" | "portal_cashback" | "protection" | "status"
     value_cents: int = 0                   # for credits: face value applicable to this booking domain
-    earn_multiplier_x100: int = 0          # e.g. 300 = 3x points per dollar
+    # Semantics depend on `kind`:
+    #  - earn_multiplier: points per dollar x100 (300 = 3x points/$)
+    #  - portal_cashback: cashback percent in basis points (300 = 3.00%)
+    earn_multiplier_x100: int = 0
     applies_channel: Optional[Channel] = None  # None = any channel
     applies_portal: str = ""               # e.g. "chase_travel" if portal-only
     note: str = ""
@@ -297,6 +300,7 @@ class Recommendation(BaseModel):
     revised: bool = False                   # True if skeptic pass changed the pick
     revision_notes: list[str] = Field(default_factory=list)
     contains_fixture_data: bool = False     # True → output must be labelled MOCK
+    provider_notes: list[str] = Field(default_factory=list)  # availability/fallback notes
     generated_at: Optional[datetime] = None
 
 
@@ -318,10 +322,25 @@ class BookingPlan(BaseModel):
     steps: list[str] = Field(default_factory=list)  # human-readable execution steps
 
     def approval_token(self) -> str:
-        """Token the user must echo back to approve exactly this plan."""
-        digest = hashlib.sha256(
-            f"{self.offer.offer_id}|{self.card_id}|{self.total_due_now_cents}|{self.points_due}".encode()
-        ).hexdigest()[:10]
+        """Token the user must echo back to approve exactly this plan.
+
+        Covers every field a user would consider material: changing the
+        offer, card, any amount (incl. at-property), points, currency,
+        refundability, cancel deadline, hotel, or room yields a new token.
+        """
+        material = "|".join([
+            self.offer.offer_id,
+            self.card_id,
+            str(self.total_due_now_cents),
+            str(self.total_due_at_property_cents),
+            str(self.points_due),
+            self.offer.currency,
+            self.refundability.value,
+            self.cancel_deadline.isoformat() if self.cancel_deadline else "-",
+            self.offer.hotel.name,
+            self.offer.room_description,
+        ])
+        digest = hashlib.sha256(material.encode()).hexdigest()[:10]
         return f"BOOK-{digest}"
 
 

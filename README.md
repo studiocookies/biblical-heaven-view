@@ -36,6 +36,8 @@ hotel-agent book confirm --plan <PLAN_ID> --token <BOOK-xxxx>
 | Fixture provider | MOCK — clearly labelled; used only when no live provider is available |
 | LLM second-opinion skeptic | OPTIONAL — runs only with `ANTHROPIC_API_KEY` |
 | Automated booking execution (browser/computer-use) | NOT IMPLEMENTED — `BookingExecutor` interface is the plug-in point |
+| Cross-currency comparison | PARTIAL — ranks within one currency and discloses exclusions; no FX conversion |
+| Zero/three-decimal currencies (JPY, KWD, …) | PARTIAL — true totals only; reward/points adjustments honestly skipped |
 
 When only fixture data is available, every report is bannered `MOCK DATA`
 and booking plans are labelled dry-run. The agent never presents mock

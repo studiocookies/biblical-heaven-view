@@ -272,6 +272,10 @@ def test_booking_persistence_roundtrip(tmp_path):
         "4111-1111-1111-1111",
         "4111111111111111",
         "card on file: 4916-3792-8471-2039-5 exp 12/28",  # 17 digits, dashed
+        "4111.1111.1111.1111",  # dot separator
+        "4111/1111/1111/1111",  # slash separator
+        "4111 1111 1111 1111",  # no-break space separator
+        "4111‑1111‑1111‑1111",  # non-breaking hyphen separator
     ],
 )
 def test_redact_masks_pan_like_sequences(text):
