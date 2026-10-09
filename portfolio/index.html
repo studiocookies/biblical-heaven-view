@@ -3,23 +3,150 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Portfolio Quest</title>
+<title>Izaiah Osborn</title>
+
+<script>
+/* ==========================================================================
+
+   YOUR CONTENT  ·  Everything you'll edit lives in this block.
+
+   HOW TO EDIT
+   - Change the words between the 'quote marks'. Keep the quote marks.
+   - Each entry sits between a { and a } and is followed by a comma.
+   - TO ADD AN ENTRY: copy one whole entry, from its { down to its },
+     including the comma after it. Paste it right below, then change the words.
+   - TO REMOVE AN ENTRY: delete it from its { down to its }, plus the comma.
+   - To leave something blank, use two quote marks with nothing between: ''
+   - Anything after // on a line is a note for you. The site ignores it.
+
+   IMAGES
+   - Make a folder called  images  next to this file and put your pictures in it.
+   - Then write the picture's name like this:  'images/my-picture.jpg'
+   - Spelling and capital letters must match the file name exactly.
+     If a picture can't be found, the site shows "IMAGE NOT FOUND" with the
+     name it looked for, so you can spot the typo.
+
+   ========================================================================== */
+
+const SITE = {
+  name: 'Izaiah Osborn',
+  tagline: 'YOUR TAGLINE HERE',            // one short line under your name, or ''
+};
+
+/* --------------------------------------------------------------------------
+   PLACES
+   Each place is one building in the town AND one section of the page.
+   They show up in the town and in the menu in this order.
+
+   The town has room for 6 buildings. To add a building, copy a whole place
+   (from its { down to its }, plus the comma) and paste it at the end of the
+   list. The new building appears in the next empty spot in town by itself.
+
+   kind  : what the section shows. Pick one:
+           'projects'  cards with a picture, description, tags and a link
+           'gallery'   a grid of pictures that open larger when clicked
+           'links'     a list of big buttons
+           'text'      plain paragraphs
+   color : the roof color. Pick one:
+           'red', 'teal', 'purple', 'gold', 'blue', 'green', 'pink'
+   intro : an optional sentence at the top of the section, or ''
+   -------------------------------------------------------------------------- */
+
+const PLACES = [
+
+  {
+    name: 'PORTFOLIO',
+    kind: 'projects',
+    color: 'red',
+    intro: '',
+    items: [                                // newest project first
+
+      {
+        title: 'PROJECT 1',
+        year: 'YEAR',
+        description: 'A short description of PROJECT 1 goes here.',
+        image: '',                          // like 'images/project-1.jpg', or ''
+        link: '',                           // like 'https://...', or '' for no button
+        tags: ['TAG', 'TAG'],               // or [] for no tags
+      },
+
+      {
+        title: 'PROJECT 2',
+        year: 'YEAR',
+        description: 'A short description of PROJECT 2 goes here.',
+        image: '',
+        link: '',
+        tags: ['TAG'],
+      },
+
+    ],
+  },
+
+  {
+    name: 'GALLERY',
+    kind: 'gallery',
+    color: 'teal',
+    intro: '',
+    items: [
+
+      { title: 'IMAGE 1', image: '', caption: '' },
+      { title: 'IMAGE 2', image: '', caption: '' },
+      { title: 'IMAGE 3', image: '', caption: '' },
+      { title: 'IMAGE 4', image: '', caption: '' },
+
+    ],
+  },
+
+  {
+    name: 'LINKS',
+    kind: 'links',
+    color: 'purple',
+    intro: '',
+    items: [
+
+      { label: 'YOUR LINK HERE', url: '' }, // like 'https://instagram.com/yourname'
+      { label: 'YOUR LINK HERE', url: '' },
+      { label: 'YOUR LINK HERE', url: '' },
+
+    ],
+  },
+
+  /* ⬇ EXAMPLE OF A FOURTH BUILDING. To use it, delete this line and the
+       "EXAMPLE END" line below, then change the words.
+
+  {
+    name: 'ABOUT',
+    kind: 'text',
+    color: 'gold',
+    intro: '',
+    items: [
+      'First paragraph goes here.',
+      'Second paragraph goes here.',
+    ],
+  },
+
+     EXAMPLE END ⬆ */
+
+];
+
+/* ============================  END OF YOUR CONTENT  ======================== */
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
 <style>
-/* Layout: a 16-bit RPG. Title screen -> walkable overworld hub -> stages rendered as pixel-bordered game windows. */
+/* Layout: one small walkable town on top; each building is a section below it. The sticky menu reaches all of them. */
 :root {
-  --ink: #120c26;        /* deepest night, page ground */
-  --night: #1d1440;      /* section ground */
-  --panel: #271b55;      /* window fill */
-  --line: #f6e7c1;       /* window border + main text (parchment phosphor) */
-  --dim: #a99bd6;        /* secondary text */
-  --gold: #ffcc33;       /* coins, headings, focus */
-  --red: #ff4f6d;        /* HP, danger, logo shadow */
-  --teal: #3ee0c5;       /* MP, links, eyebrows */
-  --violet: #9b5cff;     /* arcade neon */
-  --shadow: rgba(0, 0, 0, .55);
+  --ink: #120c26;       /* page ground */
+  --night: #1b1340;     /* alternate section ground */
+  --panel: #271b55;     /* window fill */
+  --line: #f6e7c1;      /* borders and main text */
+  --dim: #a99bd6;       /* secondary text */
+  --gold: #ffcc33;      /* headings, focus, active */
+  --red: #ff4f6d;       /* heading shadow */
+  --teal: #3ee0c5;      /* labels */
+  --shadow: rgba(0, 0, 0, .5);
   --f-display: "Press Start 2P", "Courier New", monospace;
   --f-body: "VT323", "Courier New", monospace;
   color-scheme: dark;
@@ -27,40 +154,29 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { scroll-behavior: smooth; background: var(--ink); }
+html { background: var(--ink); scroll-behavior: smooth; }
 body {
   margin: 0;
   background-color: var(--ink);
-  background-image: radial-gradient(rgba(246, 231, 193, .06) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(246, 231, 193, .05) 1px, transparent 1px);
   background-size: 8px 8px;
   color: var(--line);
   font-family: var(--f-body);
   font-size: 22px;
-  line-height: 1.25;
-  -webkit-font-smoothing: none;
+  line-height: 1.3;
   overflow-x: hidden;
 }
-/* CRT scanlines + vignette */
 body::after {
-  content: "";
-  position: fixed; inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  background:
-    repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, .16) 2px 3px),
-    radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, .45) 100%);
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100;
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, .12) 2px 3px);
 }
 a { color: var(--teal); }
-canvas.spr, #map, #stars { image-rendering: pixelated; image-rendering: crisp-edges; }
 :focus-visible { outline: 3px dashed var(--gold); outline-offset: 4px; }
-kbd {
-  font-family: var(--f-display); font-size: 9px;
-  background: var(--ink); color: var(--gold);
-  padding: 3px 5px; border: 2px solid var(--dim);
-}
 .wrap { max-width: 1120px; margin-inline: auto; padding-inline: 20px; }
+.skip { position: absolute; left: 12px; top: -60px; z-index: 60; background: var(--gold); color: var(--ink); font-family: var(--f-display); font-size: 10px; padding: 10px; }
+.skip:focus { top: 12px; }
 
-/* Pixel window: notched border built from four box-shadows plus a hard drop shadow */
+/* Pixel window: notched border from four shadows plus a hard drop shadow */
 .win {
   position: relative;
   background: var(--panel);
@@ -70,352 +186,187 @@ kbd {
     10px 10px 0 2px var(--shadow);
 }
 
-/* ---------- HUD ---------- */
+/* ---------- Menu bar ---------- */
 .hud {
   position: sticky; top: 0; z-index: 50;
   padding-top: env(safe-area-inset-top, 0px);
-  background: var(--ink);
-  border-bottom: 4px solid var(--line);
-  font-family: var(--f-display);
-  font-size: 10px;
-  letter-spacing: .06em;
+  background: var(--ink); border-bottom: 4px solid var(--line);
+  font-family: var(--f-display); font-size: 10px; letter-spacing: .06em;
 }
-.hud-in {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px 20px;
-  padding-block: 10px;
-}
-.hud-logo { color: var(--gold); text-decoration: none; font-size: 12px; }
-.hud-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
-.hud-stats b { color: var(--gold); font-weight: 400; font-variant-numeric: tabular-nums; }
-.hud-stats .lives { display: inline-flex; gap: 6px; align-items: center; color: var(--red); }
-.hud-nav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; grid-column: 1 / -1; }
+.hud-in { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 20px; padding-block: 10px; }
+.hud-logo { color: var(--gold); text-decoration: none; font-size: 11px; padding-block: 8px; }
+.hud-nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
 .hud-nav::-webkit-scrollbar { display: none; }
-.hud-nav a {
-  color: var(--line); text-decoration: none; white-space: nowrap;
-  padding: 8px 10px; border: 2px solid transparent;
-}
+.hud-nav a { color: var(--line); text-decoration: none; white-space: nowrap; padding: 8px 10px; }
 .hud-nav a::before { content: "▶"; color: var(--gold); margin-right: 6px; visibility: hidden; }
-.hud-nav a:hover, .hud-nav a:focus-visible { border-color: var(--dim); outline: none; }
 .hud-nav a:hover::before, .hud-nav a:focus-visible::before, .hud-nav a.on::before { visibility: visible; }
-.hud-btn {
-  font: inherit; color: var(--ink); background: var(--teal);
-  border: 0; padding: 8px 10px; cursor: pointer;
-  box-shadow: inset -3px -3px 0 rgba(0, 0, 0, .3);
+.hud-nav a.on { color: var(--gold); }
+.hud-nav a:focus-visible { outline-offset: -2px; }
+
+/* ---------- Town ---------- */
+.town { padding-block: 40px 56px; scroll-margin-top: 60px; }
+.town:focus { outline: none; }
+.town-head { display: grid; gap: 12px; justify-items: center; text-align: center; margin-bottom: 30px; }
+.town-head h1 {
+  margin: 0; font-family: var(--f-display); font-weight: 400;
+  font-size: clamp(22px, 6vw, 52px); line-height: 1.2; color: var(--gold);
+  text-shadow: 0 4px 0 #ff8a1f, 0 8px 0 var(--red), 0 12px 0 #5a1d4f; text-wrap: balance;
 }
-.hud-btn[aria-pressed="true"] { background: var(--dim); }
-@media (min-width: 900px) {
-  .hud-in { grid-template-columns: auto auto 1fr auto; }
-  .hud-nav { grid-column: auto; justify-content: flex-end; }
+.town-head p { margin: 8px 0 0; color: var(--dim); font-size: 24px; }
+.world {
+  width: min(100%, max(520px, calc((100svh - 300px) * 1.75)));
+  margin-inline: auto;
+  aspect-ratio: 336 / 192; max-width: 100%;
+  cursor: pointer; overflow: hidden; touch-action: manipulation;
+}
+.world:focus { outline: none; }
+.world:focus-visible { outline: 3px dashed var(--gold); outline-offset: 10px; }
+#map { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.labels span {
+  position: absolute; transform: translate(-50%, -100%);
+  font-family: var(--f-display); font-size: clamp(6px, 1.05vw, 11px);
+  color: var(--ink); background: var(--line); padding: .4em .55em; white-space: nowrap;
+  box-shadow: 0 .3em 0 rgba(0, 0, 0, .4);
+}
+.wipe {
+  position: absolute; inset: 0; background: var(--ink);
+  clip-path: circle(0% at var(--x, 50%) var(--y, 50%));
+}
+.wipe.run { animation: iris .42s steps(7) forwards; }
+@keyframes iris { to { clip-path: circle(150% at var(--x, 50%) var(--y, 50%)); } }
+.under { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px 40px; margin-top: 30px; }
+.hint { margin: 0; color: var(--dim); font-size: 20px; text-align: center; max-width: 46ch; }
+.hint kbd { font-family: var(--f-body); font-size: 22px; line-height: 1; color: var(--gold); background: var(--ink); border: 2px solid var(--dim); padding: 0 6px; }
+.hint .coarse { display: none; }
+
+/* Touch pad */
+.pad { display: none; grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(3, 58px); user-select: none; -webkit-user-select: none; touch-action: none; }
+.pad button {
+  font-family: var(--f-display); font-size: 14px; color: var(--line);
+  background: #3a2f6b; border: 0; cursor: pointer; touch-action: none;
+  box-shadow: inset -4px -4px 0 rgba(0, 0, 0, .35), inset 4px 4px 0 rgba(255, 255, 255, .08);
+}
+.pad button.down { background: #6a4fcf; box-shadow: inset 4px 4px 0 rgba(0, 0, 0, .35); }
+.pad [data-dir="up"] { grid-area: 1 / 2; }
+.pad [data-dir="left"] { grid-area: 2 / 1; }
+.pad [data-dir="right"] { grid-area: 2 / 3; }
+.pad [data-dir="down"] { grid-area: 3 / 2; }
+.pad .hub { grid-area: 2 / 2; background: #3a2f6b; }
+@media (pointer: coarse), (max-width: 760px) {
+  .pad { display: grid; }
+  .hint .fine { display: none; }
+  .hint .coarse { display: inline; }
 }
 
-/* ---------- Title screen ---------- */
-.title {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(to bottom, #0a0720 0%, #1b0f4a 45%, #4a1f6e 78%, #7a2f6a 100%);
-  border-bottom: 4px solid var(--line);
-}
-#stars { position: absolute; inset: 0; width: 100%; height: 100%; }
-.title-inner {
-  position: relative;
-  display: grid; justify-items: center; gap: 22px;
-  text-align: center;
-  padding-block: 72px 120px;
-}
-.title-pre { margin: 0; font-family: var(--f-display); font-size: 10px; letter-spacing: .25em; color: var(--teal); }
-.logo { margin: 0; font-family: var(--f-display); font-weight: 400; line-height: 1.05; }
-.logo .l1 { display: block; font-size: clamp(24px, 8vw, 76px); color: var(--line);
-  text-shadow: 0 4px 0 var(--violet), 0 8px 0 #3b1d7a, 0 14px 10px var(--shadow); }
-.logo .l2 { display: flex; justify-content: center; font-size: clamp(42px, 13.5vw, 132px); color: var(--gold); margin-top: .12em; }
-.logo .l2 span {
-  display: inline-block;
-  text-shadow: 0 5px 0 #ff8a1f, 0 10px 0 var(--red), 0 15px 0 #7a1d4f, 0 22px 14px var(--shadow);
-  animation: wave 2.4s ease-in-out infinite;
-}
-.logo .l2 span:nth-child(2) { animation-delay: .12s; }
-.logo .l2 span:nth-child(3) { animation-delay: .24s; }
-.logo .l2 span:nth-child(4) { animation-delay: .36s; }
-.logo .l2 span:nth-child(5) { animation-delay: .48s; }
-@keyframes wave { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-.12em); } }
-.title-sub { margin: 8px 0 0; font-size: 26px; color: var(--line); max-width: 34ch; }
-.title-sub b { color: var(--gold); font-weight: 400; }
-.title-menu { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 14px; justify-items: start; }
-.menu-item {
-  font-family: var(--f-display); font-size: 13px; letter-spacing: .08em;
-  color: var(--line); background: none; border: 0; padding: 4px 0 4px 28px;
-  text-decoration: none; cursor: pointer; position: relative;
-}
-.menu-item::before { content: "▶"; position: absolute; left: 0; color: var(--gold); visibility: hidden; }
-.menu-item:hover::before, .menu-item:focus-visible::before, .menu-item.primary::before { visibility: visible; }
-.menu-item:hover, .menu-item:focus-visible { color: var(--gold); outline: none; }
-.menu-item.primary { color: var(--gold); animation: blink 1.1s steps(2, start) infinite; }
-.menu-item.primary:hover, .menu-item.primary:focus-visible { animation: none; }
-@keyframes blink { to { visibility: hidden; } }
-.title-foot { margin: 18px 0 0; font-family: var(--f-display); font-size: 9px; color: var(--dim); letter-spacing: .12em; line-height: 1.8; }
-
-/* ---------- Stages ---------- */
-.stage { padding-block: 64px; scroll-margin-top: 96px; }
-.stage:nth-of-type(even) { background: var(--night); }
+/* ---------- Sections ---------- */
+.stage { padding-block: 64px; scroll-margin-top: 60px; }
+.stage:nth-child(odd) { background: var(--night); }
 .stage:focus { outline: none; }
-.stage-head { display: grid; gap: 10px; margin-bottom: 32px; }
+.stage-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 32px; }
+.stage-head > div { display: grid; gap: 10px; min-width: 0; }
 .eyebrow { font-family: var(--f-display); font-size: 10px; letter-spacing: .14em; color: var(--teal); }
 .stage-head h2 {
   margin: 0; font-family: var(--f-display); font-weight: 400;
   font-size: clamp(22px, 4.4vw, 36px); color: var(--gold);
-  text-shadow: 4px 4px 0 var(--red); text-wrap: balance;
+  text-shadow: 4px 4px 0 var(--red); text-wrap: balance; overflow-wrap: anywhere;
 }
 .stage-head p { margin: 0; color: var(--dim); max-width: 62ch; }
-.stage.arrive .stage-head h2 { animation: arrive .7s steps(4) 2; }
+.back { font-family: var(--f-display); font-size: 10px; color: var(--line); text-decoration: none; padding: 8px 0; }
+.back:hover { color: var(--gold); }
+.stage.arrive .stage-head h2 { animation: arrive .6s steps(3) 2; }
 @keyframes arrive { 50% { color: var(--line); text-shadow: 4px 4px 0 var(--teal); } }
+.empty { color: var(--dim); }
 
-/* ---------- Overworld ---------- */
-.world-wrap { aspect-ratio: 320 / 192; max-width: 100%; outline-offset: 10px; cursor: pointer; overflow: hidden; }
-.world-wrap:focus { outline: none; }
-.world-wrap:focus-visible { outline: 3px dashed var(--gold); }
-#map { display: block; width: 100%; height: 100%; }
-.labels { position: absolute; inset: 0; pointer-events: none; }
-.labels span {
-  position: absolute; transform: translate(-50%, -100%);
-  font-family: var(--f-display); font-size: clamp(6px, 1.1vw, 11px);
-  color: var(--ink); background: var(--line); padding: .35em .5em; white-space: nowrap;
-  box-shadow: 0 .3em 0 rgba(0, 0, 0, .4);
+/* Placeholder art for missing pictures */
+.ph {
+  width: 100%; height: 100%; display: grid; place-items: center; text-align: center; padding: 12px;
+  background-color: #2f2466;
+  background-image: conic-gradient(#3a2e78 25%, transparent 0 50%, #3a2e78 0 75%, transparent 0);
+  background-size: 24px 24px;
+  font-family: var(--f-display); font-size: 9px; line-height: 1.7; color: var(--dim);
+  overflow-wrap: anywhere;
 }
-.labels span.neon { background: var(--violet); color: var(--line); }
-.labels span.save { background: var(--teal); }
-.paused {
-  position: absolute; inset: 0; display: grid; place-items: center;
-  background: rgba(18, 12, 38, .55);
-  font-family: var(--f-display); font-size: clamp(10px, 1.8vw, 16px); color: var(--gold);
-}
-.paused span { background: var(--ink); padding: 14px 18px; border: 3px solid var(--gold); animation: blink 1.1s steps(2, start) infinite; }
-.world-wrap.active .paused { display: none; }
-.dialog {
-  position: absolute; left: 3%; right: 3%; bottom: 4%;
-  background: var(--ink); border: 4px solid var(--line);
-  box-shadow: inset 0 0 0 3px var(--panel);
-  padding: clamp(8px, 1.6vw, 18px) clamp(10px, 2vw, 22px);
-  font-size: clamp(16px, 2.3vw, 26px); cursor: default;
-}
-.dialog p { margin: 0 0 .5em; min-height: 2.5em; }
-.dialog .who { display: block; font-family: var(--f-display); font-size: clamp(7px, 1vw, 10px); color: var(--teal); margin-bottom: .6em; }
-.choices { display: flex; gap: 18px; justify-content: flex-end; }
-.choices button {
-  font-family: var(--f-display); font-size: clamp(8px, 1.2vw, 12px);
-  color: var(--line); background: none; border: 0; padding: 4px 4px 4px 22px; cursor: pointer; position: relative;
-}
-.choices button::before { content: "▶"; position: absolute; left: 0; color: var(--gold); visibility: hidden; }
-.choices button.sel { color: var(--gold); }
-.choices button.sel::before { visibility: visible; }
-.toast {
-  position: absolute; top: 5%; left: 50%; transform: translateX(-50%);
-  font-family: var(--f-display); font-size: clamp(8px, 1.3vw, 13px);
-  color: var(--ink); background: var(--gold); padding: 10px 14px; white-space: nowrap;
-  box-shadow: 4px 4px 0 var(--red);
-}
-.world-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 28px; color: var(--dim); font-size: 20px; }
-.world-meta kbd { margin-inline: 2px; }
+.ph span { background: var(--ink); padding: 6px 8px; }
+.ph.missing span { color: var(--red); }
 
-/* Touch pad */
-.pad { display: none; margin-top: 28px; justify-content: space-between; align-items: center; gap: 16px; user-select: none; -webkit-user-select: none; touch-action: none; }
-.dpad { display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 56px); }
-.pad button {
-  font-family: var(--f-display); font-size: 14px; color: var(--line);
-  background: #3a2f6b; border: 0; cursor: pointer;
-  box-shadow: inset -4px -4px 0 rgba(0, 0, 0, .35), inset 4px 4px 0 rgba(255, 255, 255, .08);
-  touch-action: none;
-}
-.pad button:active, .pad button.down { background: var(--violet); box-shadow: inset 4px 4px 0 rgba(0, 0, 0, .35); }
-.dpad [data-dir="up"] { grid-area: 1 / 2; }
-.dpad [data-dir="left"] { grid-area: 2 / 1; }
-.dpad [data-dir="right"] { grid-area: 2 / 3; }
-.dpad [data-dir="down"] { grid-area: 3 / 2; }
-.dpad .hub { grid-area: 2 / 2; background: #3a2f6b; }
-.ab { display: flex; gap: 16px; align-items: center; }
-.ab button { width: 64px; height: 64px; border-radius: 50%; font-size: 16px; }
-.ab [data-btn="a"] { background: var(--red); transform: translateY(-18px); }
-@media (pointer: coarse), (max-width: 760px) { .pad { display: flex; } .kb-hint { display: none; } }
-
-/* ---------- Character ---------- */
-.char { display: grid; gap: 40px; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); padding: 28px; }
-@media (max-width: 820px) { .char { grid-template-columns: minmax(0, 1fr); padding: 22px; } }
-.portrait {
-  display: grid; justify-items: center; gap: 14px; align-content: start; text-align: center;
-}
-.portrait-frame {
-  position: relative; width: 100%; max-width: 260px; aspect-ratio: 1;
-  display: grid; place-items: center;
-  background:
-    linear-gradient(to bottom, transparent 62%, rgba(0, 0, 0, .25) 62%),
-    repeating-linear-gradient(90deg, #2f6ad6 0 16px, #3a77e0 16px 32px);
-  box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--gold);
-}
-.portrait-frame canvas { width: 72%; height: auto; }
-.badge {
-  position: absolute; top: 10px; left: 10px;
-  font-family: var(--f-display); font-size: 10px; background: var(--red); color: var(--line); padding: 6px 8px;
-}
-.portrait h3 { margin: 6px 0 0; font-family: var(--f-display); font-weight: 400; font-size: 14px; line-height: 1.5; color: var(--line); }
-.portrait .cls { color: var(--teal); }
-.lv { font-family: var(--f-display); font-size: 11px; color: var(--gold); }
-.meters { display: grid; gap: 14px; }
-.meter { display: grid; grid-template-columns: 4.5em minmax(0, 1fr) auto; gap: 12px; align-items: center; font-family: var(--f-display); font-size: 10px; }
-.meter small { font-family: var(--f-body); font-size: 20px; color: var(--dim); font-variant-numeric: tabular-nums; }
-.bar { height: 16px; background: var(--ink); box-shadow: 0 0 0 3px var(--line); position: relative; }
-.bar i { display: block; height: 100%; background: var(--c); box-shadow: inset 0 4px 0 rgba(255, 255, 255, .35), inset 0 -4px 0 rgba(0, 0, 0, .25); }
-.attrs { margin: 28px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 32px; }
-.attr { display: grid; grid-template-columns: 3em minmax(0, 1fr); gap: 4px 12px; align-items: center; }
-.attr dt { font-family: var(--f-display); font-size: 11px; color: var(--gold); }
-.attr dd { margin: 0; display: grid; gap: 6px; }
-.attr dd span { font-size: 19px; color: var(--dim); }
-.segs { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
-.segs i { height: 10px; background: rgba(246, 231, 193, .12); }
-.segs i.on { background: var(--teal); }
-.speech {
-  margin-top: 30px; position: relative;
-  background: var(--ink); border: 4px solid var(--line); box-shadow: inset 0 0 0 3px var(--panel);
-  padding: 20px 22px 26px;
-}
-.speech p { margin: 0 0 .6em; max-width: 64ch; }
-.speech p:last-of-type { margin-bottom: 0; }
-.speech::after { content: "▼"; position: absolute; right: 16px; bottom: 6px; font-size: 18px; color: var(--gold); animation: blink 1s steps(2, start) infinite; }
-.equip { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--dim); font-size: 20px; }
-.equip b { font-family: var(--f-display); font-size: 9px; color: var(--teal); font-weight: 400; margin-right: 6px; }
-
-/* ---------- Level select (projects) ---------- */
-.carts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 40px 32px; }
-.cart {
-  position: relative; display: flex; flex-direction: column;
-  background: #3a2f6b;
-  clip-path: polygon(0 14px, 14px 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-  padding: 26px 16px 18px;
-  transition: transform .15s steps(3);
-}
-.cart-wrap { filter: drop-shadow(8px 8px 0 var(--shadow)); }
-.cart::before {
-  content: ""; position: absolute; left: 22px; right: 22px; top: 6px; height: 10px;
-  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, .35) 0 4px, transparent 4px 10px);
-}
-.cart-wrap:hover .cart, .cart-wrap:focus-within .cart { transform: translateY(-8px); }
-.cart-label {
-  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center;
-  background: var(--c); color: var(--ink); padding: 14px;
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .25);
-}
-.cart-label .icon { width: 64px; height: 64px; display: grid; place-items: center; background: var(--ink); }
-.cart-label .icon canvas { width: 48px; height: auto; }
-.cart-label .w { font-family: var(--f-display); font-size: 9px; letter-spacing: .1em; }
-.cart-label h3 { margin: 6px 0 0; font-family: var(--f-display); font-weight: 400; font-size: 13px; line-height: 1.4; text-wrap: balance; }
-.cart-body { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; flex: 1; }
-.cart-meta { display: flex; justify-content: space-between; gap: 10px; color: var(--dim); font-size: 19px; }
-.stars { color: var(--gold); letter-spacing: 2px; }
-.stars .off { color: rgba(246, 231, 193, .2); }
-.cart-body p { margin: 0; }
+/* Projects */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 40px 36px; }
+.card { display: flex; flex-direction: column; min-width: 0; }
+.card .thumb { aspect-ratio: 16 / 10; max-width: 100%; overflow: hidden; background: var(--ink); border-bottom: 4px solid var(--line); }
+.card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card .body { display: flex; flex-direction: column; gap: 12px; padding: 18px 18px 20px; flex: 1; }
+.card h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 13px; line-height: 1.5; color: var(--gold); text-wrap: balance; overflow-wrap: anywhere; }
+.card .year { font-family: var(--f-display); font-size: 9px; color: var(--teal); }
+.card p { margin: 0; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
 .tags li { font-family: var(--f-display); font-size: 8px; padding: 6px 7px; background: var(--ink); color: var(--teal); border: 2px solid rgba(62, 224, 197, .35); }
-.play {
+.go {
   margin-top: auto; align-self: flex-start;
   font-family: var(--f-display); font-size: 10px; color: var(--ink); background: var(--gold);
   padding: 10px 12px; text-decoration: none; box-shadow: 4px 4px 0 var(--red);
 }
-.play:hover { background: var(--line); }
+.go:hover { background: var(--line); }
 
-/* ---------- Inventory (skills) ---------- */
-.inv { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: 32px; padding: 26px; }
-@media (max-width: 820px) { .inv { grid-template-columns: minmax(0, 1fr); padding: 18px; } }
-.slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-content: start; }
-.slot {
-  position: relative; aspect-ratio: 1; display: grid; place-items: center;
-  background: var(--ink); border: 0; cursor: pointer; padding: 0;
-  box-shadow: inset 0 0 0 3px rgba(169, 155, 214, .4);
+/* Gallery */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(46%, 200px), 1fr)); gap: 18px; }
+.tile {
+  aspect-ratio: 1; max-width: 100%; padding: 0; border: 0; cursor: zoom-in; overflow: hidden;
+  background: var(--ink); box-shadow: 0 0 0 4px var(--line), 6px 6px 0 4px var(--shadow);
+  transition: transform .12s steps(2);
 }
-.slot canvas { width: 50%; height: auto; }
-.slot .q { position: absolute; right: 6px; bottom: 5px; font-family: var(--f-display); font-size: 8px; color: var(--line); }
-.slot:hover { box-shadow: inset 0 0 0 3px var(--dim); }
-.slot[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--gold), 0 0 0 3px var(--ink), 0 0 0 6px var(--gold); }
-.slot[aria-pressed="true"]::after { content: "▶"; position: absolute; left: -14px; top: 50%; transform: translateY(-50%); color: var(--gold); font-size: 16px; }
-.slot:focus-visible { outline-offset: 6px; }
-.detail { background: var(--ink); border: 4px solid var(--line); box-shadow: inset 0 0 0 3px var(--panel); padding: 22px; display: grid; gap: 14px; align-content: start; }
-.detail-top { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; }
-.detail-top .big { width: 84px; height: 84px; display: grid; place-items: center; background: var(--panel); }
-.detail-top .big canvas { width: 60px; height: auto; }
-.detail h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 14px; line-height: 1.5; color: var(--gold); }
-.detail .type { font-family: var(--f-display); font-size: 9px; color: var(--teal); }
-.detail p { margin: 0; }
-.detail .meter { grid-template-columns: 3em minmax(0, 1fr) auto; }
-.inv-cats { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--dim); font-size: 19px; }
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile:hover, .tile:focus-visible { transform: translate(-3px, -3px); box-shadow: 0 0 0 4px var(--gold), 9px 9px 0 4px var(--shadow); outline: none; }
 
-/* ---------- Quest log ---------- */
-.quests { list-style: none; margin: 0; padding: 0; display: grid; gap: 26px; }
-.quest { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 24px; padding: 24px; }
-@media (max-width: 680px) { .quest { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 20px; } }
-.quest-when { display: grid; gap: 10px; align-content: start; }
-.quest-when time { font-family: var(--f-display); font-size: 11px; color: var(--line); line-height: 1.6; }
-.pill { justify-self: start; font-family: var(--f-display); font-size: 8px; padding: 6px 8px; }
-.pill.active { background: var(--gold); color: var(--ink); animation: blink 1.4s steps(2, start) infinite; }
-.pill.done { background: var(--teal); color: var(--ink); }
-.quest h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 13px; line-height: 1.5; color: var(--gold); }
-.quest .org { color: var(--teal); }
-.quest p { margin: 8px 0 0; max-width: 64ch; }
-.reward { margin-top: 12px; display: inline-flex; gap: 10px; align-items: center; color: var(--dim); font-size: 19px; }
-.reward b { font-family: var(--f-display); font-size: 8px; color: var(--ink); background: var(--line); padding: 5px 6px; font-weight: 400; }
-
-/* ---------- Save point (contact) ---------- */
-.save { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 36px; padding: 28px; }
-@media (max-width: 820px) { .save { grid-template-columns: minmax(0, 1fr); padding: 20px; } }
-.save-intro { display: grid; gap: 18px; align-content: start; }
-.save-intro .crystal { display: flex; gap: 16px; align-items: center; }
-.save-intro .crystal canvas { width: 56px; height: auto; animation: float 2.4s ease-in-out infinite; }
-@keyframes float { 50% { transform: translateY(-6px); } }
-.save-intro p { margin: 0; }
-.warps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.warps li { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.warp {
-  display: inline-flex; gap: 10px; align-items: center;
-  font-family: var(--f-display); font-size: 10px; color: var(--line); text-decoration: none;
-  padding: 10px 12px; background: #1f8a4c; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .3), 4px 4px 0 var(--shadow);
+/* Links */
+.links { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; max-width: 620px; }
+.link {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font-family: var(--f-display); font-size: 12px; line-height: 1.5; color: var(--line); text-decoration: none;
+  padding: 18px 20px; overflow-wrap: anywhere;
 }
-.warp:hover { background: #27a85d; }
-.addr { font-size: 22px; color: var(--gold); user-select: all; overflow-wrap: anywhere; }
-.copy { font-family: var(--f-display); font-size: 8px; color: var(--ink); background: var(--teal); border: 0; padding: 7px 8px; cursor: pointer; }
-form { display: grid; gap: 16px; }
-.field { display: grid; gap: 8px; }
-.field label { font-family: var(--f-display); font-size: 10px; color: var(--teal); }
-.field input, .field textarea {
-  font: inherit; color: var(--line); background: var(--ink);
-  border: 0; box-shadow: inset 0 0 0 3px var(--dim); padding: 10px 12px; caret-color: var(--gold); width: 100%;
-}
-.field textarea { min-height: 130px; resize: vertical; }
-.field input:focus, .field textarea:focus { outline: none; box-shadow: inset 0 0 0 3px var(--gold); }
-.field input::placeholder, .field textarea::placeholder { color: rgba(169, 155, 214, .6); }
-.send {
-  justify-self: start; font-family: var(--f-display); font-size: 12px; color: var(--ink); background: var(--gold);
-  border: 0; padding: 14px 16px; cursor: pointer; box-shadow: 5px 5px 0 var(--red);
-}
-.send:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--red); }
-.saved { background: var(--ink); border: 4px solid var(--gold); padding: 16px; display: grid; gap: 12px; }
-.saved h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 12px; color: var(--gold); }
-.saved pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 19px; color: var(--dim); max-height: 180px; overflow: auto; }
-.saved .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.saved a { font-family: var(--f-display); font-size: 9px; }
+.link::after { content: "▶"; color: var(--gold); flex: none; }
+a.link:hover, a.link:focus-visible { color: var(--gold); }
+a.link:hover::after { transform: translateX(4px); }
+.link.blank { color: var(--dim); }
+.link.blank::after { content: "NO URL YET"; font-size: 8px; color: var(--dim); }
 
-/* ---------- Continue footer ---------- */
-.continue { padding-block: 72px 88px; text-align: center; border-top: 4px solid var(--line); display: grid; gap: 22px; justify-items: center; }
-.continue h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(24px, 6vw, 48px); color: var(--line); }
-.continue .count { font-family: var(--f-display); font-size: clamp(40px, 10vw, 88px); color: var(--red); font-variant-numeric: tabular-nums; min-height: 1.1em; }
-.continue p { margin: 0; color: var(--dim); }
+/* Text */
+.text { padding: 26px 28px; display: grid; gap: 14px; }
+.text p { margin: 0; max-width: 64ch; }
 
-/* Cheat mode (Konami code) */
-.cheat .logo, .cheat .hud-logo, .cheat .stage-head h2 { animation: rainbow 1.2s linear infinite; }
-@keyframes rainbow { to { filter: hue-rotate(360deg); } }
+/* Lightbox */
+dialog.lb {
+  width: min(94vw, 1000px); max-height: 94svh; padding: 0; border: 4px solid var(--line);
+  background: var(--ink); color: var(--line);
+}
+dialog.lb::backdrop { background: rgba(10, 7, 30, .88); }
+.lb-media { display: grid; place-items: center; background: #0b0820; }
+.lb-media img { display: block; max-width: 100%; max-height: 74svh; object-fit: contain; }
+.lb-media .ph { aspect-ratio: 4 / 3; max-height: 74svh; font-size: 11px; }
+.lb-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-top: 4px solid var(--line); }
+.lb-cap { min-width: 0; flex: 1 1 200px; }
+.lb-cap b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 11px; color: var(--gold); margin-bottom: 6px; overflow-wrap: anywhere; }
+.lb-cap span { color: var(--dim); font-size: 20px; }
+.lb-btns { display: flex; gap: 8px; align-items: center; }
+.lb-btns button { font-family: var(--f-display); font-size: 11px; color: var(--ink); background: var(--line); border: 0; padding: 10px 12px; cursor: pointer; }
+.lb-btns button:hover { background: var(--gold); }
+.lb-count { font-family: var(--f-display); font-size: 9px; color: var(--dim); font-variant-numeric: tabular-nums; margin-right: 6px; }
+
+/* Footer */
+.foot { border-top: 4px solid var(--line); padding-block: 36px 48px; }
+.foot .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; font-family: var(--f-display); font-size: 9px; color: var(--dim); }
+.foot a { color: var(--line); text-decoration: none; }
 
 @media (max-width: 520px) {
   body { font-size: 20px; }
   .wrap { padding-inline: 16px; }
-  .title-inner { padding-block: 52px 96px; }
-  .hud-stats .hi { display: none; }
+  .town { padding-block: 28px 44px; }
+  .text { padding: 20px; }
+  .hud { font-size: 8px; }
+  .hud-nav a { padding: 8px 6px; }
+  .hud-nav a::before { margin-right: 4px; }
+  .pad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -425,565 +376,233 @@ form { display: grid; gap: 16px; }
 </head>
 <body>
 
+<a class="skip" href="#sections">Skip the town</a>
+
 <header class="hud">
   <div class="wrap hud-in">
-    <a class="hud-logo" href="#top" aria-label="Back to title screen">P·Q</a>
-    <div class="hud-stats" aria-live="polite">
-      <span class="lives"><span data-spr="heart" data-scale="2"></span><span>×<b id="lives">03</b></span></span>
-      <span>COINS <b id="coins">00</b>/<span id="coinTotal">12</span></span>
-      <span class="hi">HI <b id="hi">00</b></span>
-    </div>
-    <nav class="hud-nav" aria-label="Stages">
-      <a href="#world">WORLD</a>
-      <a href="#character">HERO</a>
-      <a href="#levels">LEVELS</a>
-      <a href="#inventory">ITEMS</a>
-      <a href="#quests">QUESTS</a>
-      <a href="#save">SAVE</a>
-    </nav>
-    <button class="hud-btn" id="mute" type="button" aria-pressed="false">♪ ON</button>
+    <a class="hud-logo" href="#town" id="logo"></a>
+    <nav class="hud-nav" id="menu" aria-label="Menu"></nav>
   </div>
 </header>
 
 <main>
-  <section class="title" id="top">
-    <canvas id="stars" width="240" height="135" aria-hidden="true"></canvas>
-    <div class="wrap title-inner">
-      <p class="title-pre" id="presents">IZAIAH OSBORN PRESENTS</p>
-      <h1 class="logo"><span class="l1">PORTFOLIO</span><span class="l2" aria-label="QUEST"><span>Q</span><span>U</span><span>E</span><span>S</span><span>T</span></span></h1>
-      <p class="title-sub" id="tagline">A <b>creative technologist</b> builds websites, brands and launches that feel like play.</p>
-      <ul class="title-menu">
-        <li><button class="menu-item primary" id="start" type="button">PRESS START</button></li>
-        <li><a class="menu-item" href="#levels">LEVEL SELECT</a></li>
-        <li><a class="menu-item" href="#save">CONTINUE · CONTACT</a></li>
-      </ul>
-      <p class="title-foot">© 2026 IZAIAH OSBORN · 1 PLAYER<br>↑↑↓↓←→←→ B A</p>
-    </div>
-  </section>
-
-  <section class="stage" id="world" tabindex="-1" aria-labelledby="world-h">
+  <section class="town" id="town" tabindex="-1" aria-labelledby="siteName">
     <div class="wrap">
-      <header class="stage-head">
-        <span class="eyebrow">WORLD 1 · OVERWORLD</span>
-        <h2 id="world-h">THE HUB</h2>
-        <p>Every building is a part of the portfolio. Walk into a door to go inside, or touch the save crystal to get in touch.</p>
-      </header>
-      <div class="world-wrap win" id="worldEl" tabindex="0" role="application"
-           aria-label="Overworld. Arrow keys or WASD to walk, Enter to interact, Escape to cancel.">
-        <canvas id="map" width="320" height="192"></canvas>
+      <div class="town-head">
+        <h1 id="siteName"></h1>
+        <p id="tagline"></p>
+      </div>
+      <div class="world win" id="world" tabindex="0" role="application"
+           aria-label="Town map. Use arrow keys to walk. Walk into a door to open that section. Every section is also in the menu.">
+        <canvas id="map" width="336" height="192"></canvas>
         <div class="labels" id="labels" aria-hidden="true"></div>
-        <div class="paused"><span>▶ CLICK TO PLAY</span></div>
-        <div class="dialog" id="dialog" hidden>
-          <span class="who" id="dlgWho"></span>
-          <p id="dlgText" aria-live="polite"></p>
-          <div class="choices">
-            <button type="button" data-c="0" class="sel">ENTER</button>
-            <button type="button" data-c="1">STAY</button>
-          </div>
-        </div>
-        <div class="toast" id="toast" hidden></div>
+        <div class="wipe" id="wipe" hidden></div>
       </div>
-      <div class="pad" id="pad" aria-label="Touch controls">
-        <div class="dpad">
-          <button type="button" data-dir="up" aria-label="Up">▲</button>
-          <button type="button" data-dir="left" aria-label="Left">◀</button>
+      <div class="under">
+        <p class="hint">
+          <span class="fine"><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> or click to walk. Walk into a door to go inside.</span>
+          <span class="coarse">Tap anywhere in town to walk there, or use the pad. Walk into a door to go inside.</span>
+        </p>
+        <div class="pad" id="pad" aria-label="Walking pad">
+          <button type="button" data-dir="up" aria-label="Walk up">▲</button>
+          <button type="button" data-dir="left" aria-label="Walk left">◀</button>
           <span class="hub" aria-hidden="true"></span>
-          <button type="button" data-dir="right" aria-label="Right">▶</button>
-          <button type="button" data-dir="down" aria-label="Down">▼</button>
-        </div>
-        <div class="ab">
-          <button type="button" data-btn="b" aria-label="B, cancel">B</button>
-          <button type="button" data-btn="a" aria-label="A, interact">A</button>
-        </div>
-      </div>
-      <div class="world-meta">
-        <span class="kb-hint"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> or <kbd>WASD</kbd> walk · <kbd>ENTER</kbd> talk · <kbd>ESC</kbd> back</span>
-        <span>Find all <b id="coinTotal2">12</b> coins for a 1UP.</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="stage" id="character" tabindex="-1" aria-labelledby="char-h">
-    <div class="wrap">
-      <header class="stage-head">
-        <span class="eyebrow">STAGE 1-1 · HERO'S HOUSE</span>
-        <h2 id="char-h">CHARACTER</h2>
-      </header>
-      <div class="win char">
-        <div class="portrait">
-          <div class="portrait-frame"><span class="badge">P1</span><span data-spr="face" data-scale="10"></span></div>
-          <h3 id="heroName"></h3>
-          <span class="lv" id="heroLv"></span>
-        </div>
-        <div>
-          <div class="meters" id="meters"></div>
-          <dl class="attrs" id="attrs"></dl>
-          <div class="speech" id="bio"></div>
-          <div class="equip" id="equip"></div>
+          <button type="button" data-dir="right" aria-label="Walk right">▶</button>
+          <button type="button" data-dir="down" aria-label="Walk down">▼</button>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="stage" id="levels" tabindex="-1" aria-labelledby="levels-h">
-    <div class="wrap">
-      <header class="stage-head">
-        <span class="eyebrow">STAGE 1-2 · THE ARCADE</span>
-        <h2 id="levels-h">LEVEL SELECT</h2>
-        <p>Each cartridge is a shipped project. Difficulty is how hard it was to build.</p>
-      </header>
-      <div class="carts" id="carts"></div>
-    </div>
-  </section>
-
-  <section class="stage" id="inventory" tabindex="-1" aria-labelledby="inv-h">
-    <div class="wrap">
-      <header class="stage-head">
-        <span class="eyebrow">STAGE 1-3 · ITEM SHOP</span>
-        <h2 id="inv-h">INVENTORY</h2>
-        <p>Pick an item to inspect it. LV is out of 10.</p>
-      </header>
-      <div class="win inv">
-        <div class="slots" id="slots" role="group" aria-label="Skills"></div>
-        <div class="detail" id="detail" aria-live="polite"></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="stage" id="quests" tabindex="-1" aria-labelledby="quests-h">
-    <div class="wrap">
-      <header class="stage-head">
-        <span class="eyebrow">STAGE 1-4 · GUILD HALL</span>
-        <h2 id="quests-h">QUEST LOG</h2>
-        <p>Experience, newest quest first.</p>
-      </header>
-      <ol class="quests" id="questList"></ol>
-    </div>
-  </section>
-
-  <section class="stage" id="save" tabindex="-1" aria-labelledby="save-h">
-    <div class="wrap">
-      <header class="stage-head">
-        <span class="eyebrow">STAGE 1-5 · SAVE POINT</span>
-        <h2 id="save-h">SAVE &amp; CO-OP</h2>
-      </header>
-      <div class="win save">
-        <div class="save-intro">
-          <div class="crystal"><span data-spr="crystal" data-scale="7"></span><p>Your progress has been saved. Got a quest that needs a second player? Send it over and I'll reply within two days.</p></div>
-          <ul class="warps" id="warps"></ul>
-        </div>
-        <div>
-          <form id="form" novalidate>
-            <div class="field"><label for="f-name">PLAYER NAME</label><input id="f-name" name="name" required maxlength="40" placeholder="AAA" autocomplete="name"></div>
-            <div class="field"><label for="f-email">EMAIL</label><input id="f-email" name="email" type="email" required placeholder="you@studio.com" autocomplete="email"></div>
-            <div class="field"><label for="f-msg">QUEST DETAILS</label><textarea id="f-msg" name="msg" required placeholder="What are we building, and when does it launch?"></textarea></div>
-            <button class="send" type="submit">SAVE &amp; SEND ▶</button>
-          </form>
-          <div class="saved" id="saved" hidden>
-            <h3>GAME SAVED! MESSAGE READY.</h3>
-            <pre id="savedText"></pre>
-            <div class="row">
-              <button class="copy" type="button" id="copyMsg">COPY MESSAGE</button>
-              <a id="mailLink" href="#">OPEN IN MAIL APP ▶</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <footer class="continue" id="continue">
-    <h2>CONTINUE?</h2>
-    <div class="count" id="count" aria-hidden="true">9</div>
-    <a class="menu-item primary" href="#top">YES · PLAY AGAIN</a>
-    <p id="credits">Thanks for playing.</p>
-  </footer>
+  <div id="sections"></div>
 </main>
+
+<footer class="foot">
+  <div class="wrap"><span id="copy"></span><a href="#town" data-back>▲ BACK TO TOWN</a></div>
+</footer>
+
+<dialog class="lb" id="lightbox" aria-label="Picture viewer">
+  <div class="lb-media" id="lbMedia"></div>
+  <div class="lb-bar">
+    <div class="lb-cap" id="lbCap"></div>
+    <div class="lb-btns">
+      <span class="lb-count" id="lbCount"></span>
+      <button type="button" id="lbPrev" aria-label="Previous picture">◀</button>
+      <button type="button" id="lbNext" aria-label="Next picture">▶</button>
+      <button type="button" id="lbClose" aria-label="Close">✕</button>
+    </div>
+  </div>
+</dialog>
 
 <script>
 (() => {
 'use strict';
 
-/* =====================================================================
-   PLAYER DATA. Edit everything below to make the quest your own.
-   ===================================================================== */
-const DATA = {
-  name: 'IZAIAH OSBORN',
-  firstName: 'Izaiah',
-  cls: 'Creative Technologist',
-  level: 27,
-  email: 'player1@example.com',
-  links: [
-    { label: 'GITHUB', url: 'https://github.com/studiocookies' },
-    { label: 'LINKEDIN', url: 'https://www.linkedin.com/' },
-  ],
-  meters: [
-    { k: 'HP', label: 'Focus', v: 100, max: 100, c: 'var(--red)' },
-    { k: 'MP', label: 'Creativity', v: 86, max: 100, c: 'var(--teal)' },
-    { k: 'XP', label: 'to LV 28', v: 7420, max: 9000, c: 'var(--gold)' },
-  ],
-  attrs: [
-    { k: 'STR', label: 'Strategy', v: 8 },
-    { k: 'DEX', label: 'Design', v: 9 },
-    { k: 'INT', label: 'Engineering', v: 8 },
-    { k: 'WIS', label: 'Product sense', v: 9 },
-    { k: 'CHA', label: 'Storytelling', v: 9 },
-    { k: 'LUK', label: 'Coffee luck', v: 6 },
-  ],
-  bio: [
-    "Greetings, traveler! I'm Izaiah, a creative technologist who builds websites, brands and digital launches that feel like play.",
-    "I mix code, design and strategy to help founders, artists and studios level up how they show up online. Small party, big boss fights.",
-    "Currently accepting new quests for 2027.",
-  ],
-  equip: [
-    ['WEAPON', 'Mechanical keyboard'],
-    ['ARMOR', 'Hoodie +2'],
-    ['ACCESSORY', 'Cold brew of Haste'],
-  ],
-  projects: [
-    { w: '1-1', title: 'NEON LEDGER', genre: 'Fintech dashboard', year: 2026, diff: 4, spr: 'chart', c: '#3ee0c5',
-      blurb: 'A real-time money dashboard that turns budgeting into a daily streak. Weekly check-ins rose 40% after launch.',
-      tags: ['React', 'D3', 'Supabase'], url: '#' },
-    { w: '1-2', title: 'PIXEL PANTRY', genre: 'Mobile recipe app', year: 2025, diff: 3, spr: 'potion', c: '#ff7a8f',
-      blurb: 'Snap your fridge, get a recipe. Ingredients become collectible cards and every meal cooked unlocks an achievement.',
-      tags: ['React Native', 'Vision API'], url: '#' },
-    { w: '1-3', title: 'SOUNDCRAWLER', genre: 'Music discovery', year: 2025, diff: 5, spr: 'note', c: '#b48cff',
-      blurb: 'A dungeon-crawler for finding indie artists. Each room is a genre, each treasure chest a hand-picked playlist.',
-      tags: ['Web Audio', 'Three.js'], url: '#' },
-    { w: '1-4', title: 'LAUNCHPAD', genre: 'Startup brand + site', year: 2024, diff: 3, spr: 'rocket', c: '#ffcc33',
-      blurb: 'Identity, landing page and launch campaign for a seed-stage startup. The waitlist passed 12,000 in two weeks.',
-      tags: ['Branding', 'Next.js', 'Copy'], url: '#' },
-    { w: '1-5', title: 'BOSS RUSH', genre: 'Campaign microsite', year: 2024, diff: 4, spr: 'pad', c: '#ff9b4a',
-      blurb: 'An interactive launch where visitors battled the bosses of bad workflow. Average time on page: 3 min 10 s.',
-      tags: ['Canvas', 'GSAP'], url: '#' },
-    { w: '1-6', title: 'SMALL SHOP ATLAS', genre: 'Community map', year: 2023, diff: 2, spr: 'key', c: '#6fd36f',
-      blurb: 'A hand-drawn map of independent shops in the neighborhood, with side quests that send you through their doors.',
-      tags: ['Mapbox', 'Node'], url: '#' },
-  ],
-  items: [
-    { name: 'JavaScript', type: 'WEAPON', lv: 9, spr: 'sword', d: 'Trusty blade. Cuts through the DOM, APIs and deadlines alike.' },
-    { name: 'TypeScript', type: 'ARMOR', lv: 8, spr: 'shield', d: 'Type-safe plating. Blocks 99% of "undefined is not a function" attacks.' },
-    { name: 'React', type: 'RELIC', lv: 9, spr: 'gem', d: 'Component crystal. Shatters any interface into reusable shards.' },
-    { name: 'Node.js', type: 'POTION', lv: 7, spr: 'potion', pal: { R: '#55c25b' }, d: 'Server elixir. Restores backend HP and summons APIs.' },
-    { name: 'Python', type: 'SPELLBOOK', lv: 7, spr: 'book', d: 'Scripts, scrapers and automations that run while the party sleeps.' },
-    { name: 'Figma', type: 'KEY ITEM', lv: 8, spr: 'key', d: 'Unlocks the design doors: wireframes, prototypes and full systems.' },
-    { name: 'Pixel Art & Motion', type: 'CHARM', lv: 9, spr: 'star', d: 'Makes things move with intent. Every hover gets a little joy.' },
-    { name: 'Brand Strategy', type: 'SCROLL', lv: 8, spr: 'rocket', d: 'Positioning, naming and launch plans that give a product its quest.' },
-    { name: 'Data & Analytics', type: 'LENS', lv: 7, spr: 'chart', d: 'Reveals hidden paths in the numbers so the next move is obvious.' },
-    { name: 'Sound Design', type: 'CHARM', lv: 6, spr: 'note', d: 'Chiptune blips and UI audio. You are hearing it right now.' },
-    { name: 'Leadership', type: 'PASSIVE', lv: 9, spr: 'heart', d: 'Party buff: +20% team morale and fewer 2 a.m. emergencies.' },
-    { name: 'Game Design', type: 'CLASS SKILL', lv: 9, spr: 'pad', d: 'Turns any experience into something people want to replay.' },
-  ],
-  quests: [
-    { when: '2024 – NOW', active: true, role: 'Founder & Creative Lead', org: 'Osborn Management',
-      d: 'Running a small studio that crafts brands, websites and launches for creators and founders.', reward: 'Own guild unlocked' },
-    { when: '2022 – 2024', role: 'Lead Creative Developer', org: 'Studio Cookies',
-      d: 'Built interactive sites and campaigns, and led a party of four developers and designers.', reward: '20+ campaign sites shipped' },
-    { when: '2020 – 2022', role: 'Front-End Developer', org: 'Freelance',
-      d: 'Shipped websites for local businesses, musicians and artists, from first sketch to launch day.', reward: '+500 client trust' },
-    { when: '2018', role: 'Tutorial Level', org: 'Self-taught',
-      d: 'Wrote a first line of code: a choose-your-own-adventure game that ran in the browser.', reward: 'The Web discovered' },
-  ],
-};
-
-/* ===================================================================== */
-
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (s, el = document) => el.querySelector(s);
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ROOFS = {
+  red: ['#e0424f', '#9e2438'], teal: ['#2bb8a0', '#1a7a6a'], purple: ['#8a4fff', '#5a2bb8'],
+  gold: ['#e8a417', '#a8700a'], blue: ['#3f7cff', '#2550b8'], green: ['#4caf50', '#2e7a32'], pink: ['#ff6bb5', '#b83a7a'],
 };
+const NOUNS = { projects: 'PROJECT', gallery: 'IMAGE', links: 'LINK' };
 
-/* ---------- Sprites ---------- */
-const PAL = { R: '#ff4f6d', Y: '#ffcc33', O: '#c9761b', W: '#fff4dc', B: '#4a7bff', K: '#1a1033', T: '#3ee0c5',
-  S: '#f2b78c', G: '#55c25b', P: '#9b5cff', N: '#8a5a2b', E: '#9aa3c7' };
-const SPR = {
-  heart: ['.RR..RR.', 'RWRRRRRR', 'RRRRRRRR', 'RRRRRRRR', '.RRRRRR.', '..RRRR..', '...RR...'],
-  coin: ['.YYY.', 'YWYYO', 'YWYYO', 'YYYYO', '.OOO.'],
-  crystal: ['...TT...', '..TWTT..', '.TWTTTT.', 'TWTTTTTP', '.TTTTTP.', '..TTPP..', '...PP...'],
-  sword: ['.......W', '......WE', '.....WE.', '....WE..', '.O.WE...', '..OE....', '..NO....', '.N..O...'],
-  shield: ['BBBBBBBB', 'BWWWYYYB', 'BWWWYYYB', 'BWWWYYYB', 'BYYYWWWB', '.BYYWWB.', '..BYWB..', '...BB...'],
-  gem: ['..TTTT..', '.TWTTTT.', 'TWTTTTTB', 'TTTTTTBB', '.TTTTBB.', '..TTBB..', '...BB...'],
-  potion: ['...WW...', '...NN...', '...WW...', '..WRRW..', '.WRRRRW.', '.WRRWRW.', '.WRRRRW.', '..WWWW..'],
-  book: ['PPPPPPP.', 'PWWWWWPK', 'PWYYYWPK', 'PWWWWWPK', 'PWYYYWPK', 'PWWWWWPK', 'PPPPPPPK', '.KKKKKKK'],
-  key: ['.YYY....', 'Y...Y...', 'Y...YYYY', 'Y...Y.Y.', '.YYY..Y.'],
-  star: ['....Y....', '....Y....', '...YYY...', 'YYYYWYYYY', '.YYYYYYY.', '..YYYYY..', '..YY.YY..', '.YY...YY.', '.Y.....Y.'],
-  rocket: ['...WW...', '..WRRW..', '..WTTW..', '..WWWW..', '.RWWWWR.', 'RRWWWWRR', '..Y..Y..', '..O..O..'],
-  chart: ['.......T', '....T..T', '....T.TT', '.R..TTTT', '.R.TTTTT', 'RRRTTTTT', 'WWWWWWWW'],
-  note: ['..YYYYYY', '..Y....Y', '..Y....Y', '..Y....Y', 'YYY..YYY', 'YYY..YYY'],
-  pad: ['.EEEEEEEE.', 'EEKEEEERE.', 'EKKKEERERE', 'EEKEEEEREE', '.EE....EE.'],
-  face: [
-    '................',
-    '.....RRRRRR.....',
-    '....RRRRRRRR....',
-    '...RRRWRRRRRR...',
-    '..RRRRRRRRRRRRR.',
-    '...KKSSSSSSKK...',
-    '...KSSSSSSSSK...',
-    '...SSKKSSKKSS...',
-    '...SSWKSSWKSS...',
-    '...SSSSSSSSSS...',
-    '....SSSSSSSS....',
-    '....SSSKKSSS....',
-    '.....SSSSSS.....',
-    '...TTTSSSSTTT...',
-    '..TTTTTTTTTTTT..',
-    '.TTTTTTTTTTTTTT.',
-  ],
-};
-
-function drawSprite(ctx, rows, x, y, s = 1, pal = {}, flip = false) {
-  for (let j = 0; j < rows.length; j++) {
-    const row = flip ? [...rows[j]].reverse().join('') : rows[j];
-    for (let i = 0; i < row.length; i++) {
-      const ch = row[i];
-      if (ch === '.') continue;
-      ctx.fillStyle = pal[ch] || PAL[ch];
-      ctx.fillRect(x + i * s, y + j * s, s, s);
-    }
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v;
+    else if (k === 'text') n.textContent = v;
+    else n.setAttribute(k, v);
   }
+  kids.flat().forEach(k => k != null && n.append(k));
+  return n;
 }
-function spriteCanvas(name, scale = 4, pal = {}) {
-  const rows = SPR[name];
-  const w = Math.max(...rows.map(r => r.length));
-  const c = document.createElement('canvas');
-  c.width = w * scale; c.height = rows.length * scale;
-  c.className = 'spr';
-  c.setAttribute('aria-hidden', 'true');
-  drawSprite(c.getContext('2d'), rows, 0, 0, scale, pal);
-  return c;
+
+/* ---------- Places: give each one a section id and roof colors ---------- */
+const used = new Set();
+const places = (typeof PLACES !== 'undefined' && Array.isArray(PLACES) ? PLACES : []).map((p, i) => {
+  let id = String(p.name || `place-${i + 1}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `place-${i + 1}`;
+  while (used.has(id) || id === 'town' || id === 'sections') id += '-2';
+  used.add(id);
+  return { ...p, name: String(p.name || 'PLACE'), id, items: Array.isArray(p.items) ? p.items : [], roof: ROOFS[p.color] || ROOFS.red };
+});
+
+/* ---------- Pictures (with a labeled stand-in when missing) ---------- */
+function placeholder(label, missing) {
+  return el('div', { class: missing ? 'ph missing' : 'ph' }, el('span', { text: label }));
 }
-function hydrate(root = document) {
-  root.querySelectorAll('[data-spr]').forEach(el => {
-    el.replaceWith(spriteCanvas(el.dataset.spr, +el.dataset.scale || 4));
+function picture(src, alt, emptyLabel) {
+  if (!src) return placeholder(emptyLabel);
+  const img = el('img', { src, alt: alt || '', loading: 'lazy' });
+  img.addEventListener('error', () => img.replaceWith(placeholder(`IMAGE NOT FOUND: ${src}`, true)), { once: true });
+  return img;
+}
+
+/* ---------- Sections ---------- */
+function renderProjects(p) {
+  if (!p.items.length) return el('p', { class: 'empty', text: 'No projects yet.' });
+  return el('div', { class: 'cards' }, p.items.map(it => {
+    const title = it.title || 'UNTITLED';
+    return el('article', { class: 'card win' },
+      el('div', { class: 'thumb' }, picture(it.image, title, 'NO IMAGE YET')),
+      el('div', { class: 'body' },
+        it.year ? el('span', { class: 'year', text: it.year }) : null,
+        el('h3', { text: title }),
+        it.description ? el('p', { text: it.description }) : null,
+        it.tags && it.tags.length ? el('ul', { class: 'tags' }, it.tags.map(t => el('li', { text: t }))) : null,
+        it.link ? el('a', { class: 'go', href: it.link, target: '_blank', rel: 'noopener', text: 'VIEW PROJECT ▶' }) : null));
+  }));
+}
+
+function renderGallery(p) {
+  if (!p.items.length) return el('p', { class: 'empty', text: 'No images yet.' });
+  return el('div', { class: 'grid' }, p.items.map((it, i) => {
+    const title = it.title || `IMAGE ${i + 1}`;
+    const b = el('button', { class: 'tile', type: 'button', 'aria-label': `Open ${title}` }, picture(it.image, title, title));
+    b.addEventListener('click', () => openLightbox(p.items, i));
+    return b;
+  }));
+}
+
+function renderLinks(p) {
+  if (!p.items.length) return el('p', { class: 'empty', text: 'No links yet.' });
+  return el('ul', { class: 'links' }, p.items.map(it => {
+    const label = it.label || it.url || 'LINK';
+    return el('li', {}, it.url
+      ? el('a', { class: 'link win', href: it.url, target: '_blank', rel: 'noopener', text: label })
+      : el('span', { class: 'link win blank', text: label }));
+  }));
+}
+
+function renderText(p) {
+  return el('div', { class: 'win text' }, p.items.map(t => el('p', { text: t })));
+}
+
+const RENDER = { projects: renderProjects, gallery: renderGallery, links: renderLinks, text: renderText };
+
+function renderPage() {
+  const site = typeof SITE !== 'undefined' && SITE ? SITE : {};
+  const name = site.name || '';
+  $('#siteName').textContent = name.toUpperCase();
+  $('#logo').textContent = name.toUpperCase();
+  $('#copy').textContent = `© ${new Date().getFullYear()} ${name.toUpperCase()}`;
+  const tag = site.tagline || '';
+  $('#tagline').textContent = tag; $('#tagline').hidden = !tag;
+
+  const menu = $('#menu');
+  menu.append(el('a', { href: '#town', text: 'TOWN' }));
+  const host = $('#sections');
+  places.forEach(p => {
+    menu.append(el('a', { href: `#${p.id}`, text: p.name }));
+    const noun = NOUNS[p.kind];
+    const n = p.items.length;
+    const head = el('header', { class: 'stage-head' },
+      el('div', {},
+        noun ? el('span', { class: 'eyebrow', text: `${n} ${noun}${n === 1 ? '' : 'S'}` }) : null,
+        el('h2', { id: `${p.id}-h`, text: p.name }),
+        p.intro ? el('p', { text: p.intro }) : null),
+      el('a', { class: 'back', href: '#town', 'data-back': '', text: '◀ BACK TO TOWN' }));
+    const body = (RENDER[p.kind] || renderText)(p);
+    host.append(el('section', { class: 'stage', id: p.id, tabindex: '-1', 'aria-labelledby': `${p.id}-h` },
+      el('div', { class: 'wrap' }, head, body)));
   });
 }
 
-/* ---------- Chiptune sound ---------- */
-const Sound = (() => {
-  let ac = null;
-  let muted = store.get('pq-mute') === '1';
-  function ctx() {
-    if (!ac) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ac = new AC();
-    }
-    if (ac.state === 'suspended') ac.resume();
-    return ac;
-  }
-  function tone(f, d, { type = 'square', vol = 0.045, at = 0, to = null } = {}) {
-    if (muted) return;
-    const a = ctx();
-    if (!a) return;
-    const t = a.currentTime + at;
-    const o = a.createOscillator(), g = a.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(f, t);
-    if (to) o.frequency.exponentialRampToValueAtTime(to, t + d);
-    g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g).connect(a.destination);
-    o.start(t); o.stop(t + d + 0.03);
-  }
-  const seq = (notes, step, opts = {}) => notes.forEach((f, i) => f && tone(f, step * 1.1, { ...opts, at: i * step }));
-  return {
-    get muted() { return muted; },
-    set muted(v) { muted = v; store.set('pq-mute', v ? '1' : '0'); },
-    coin() { tone(988, .08); tone(1319, .32, { at: .08 }); },
-    bump() { tone(140, .08, { vol: .035, to: 90 }); },
-    select() { tone(740, .04, { vol: .03 }); },
-    tick() { tone(1250, .02, { vol: .01 }); },
-    confirm() { seq([523, 659, 784, 1047], .06); },
-    cancel() { seq([440, 330], .07); },
-    start() { seq([523, 659, 784, 1047, 0, 784, 1047, 1319], .075); },
-    oneUp() { seq([1319, 1568, 2637, 2093, 2349, 3136], .09, { vol: .035 }); },
-  };
-})();
+/* ---------- Lightbox ---------- */
+const lb = $('#lightbox');
+let lbItems = [], lbIndex = 0;
+function showLb(i) {
+  lbIndex = (i + lbItems.length) % lbItems.length;
+  const it = lbItems[lbIndex];
+  const title = it.title || `IMAGE ${lbIndex + 1}`;
+  $('#lbMedia').replaceChildren(picture(it.image, title, title));
+  $('#lbCap').replaceChildren(el('b', { text: title }), it.caption ? el('span', { text: it.caption }) : '');
+  $('#lbCount').textContent = `${lbIndex + 1} / ${lbItems.length}`;
+  const many = lbItems.length > 1;
+  $('#lbPrev').hidden = !many; $('#lbNext').hidden = !many; $('#lbCount').hidden = !many;
+}
+function openLightbox(items, i) {
+  lbItems = items; showLb(i);
+  if (lb.showModal) lb.showModal(); else lb.setAttribute('open', '');
+}
+$('#lbPrev').addEventListener('click', () => showLb(lbIndex - 1));
+$('#lbNext').addEventListener('click', () => showLb(lbIndex + 1));
+$('#lbClose').addEventListener('click', () => lb.close());
+lb.addEventListener('click', e => { if (e.target === lb) lb.close(); });
+lb.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') showLb(lbIndex - 1);
+  if (e.key === 'ArrowRight') showLb(lbIndex + 1);
+});
 
-/* ---------- Render content from DATA ---------- */
-function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-
-function renderContent() {
-  $('#presents').textContent = `${DATA.name} PRESENTS`;
-  $('#heroName').innerHTML = `${esc(DATA.name)}<br><span class="cls">${esc(DATA.cls.toUpperCase())}</span>`;
-  $('#heroLv').textContent = `LV ${DATA.level}`;
-
-  $('#meters').innerHTML = DATA.meters.map(m => `
-    <div class="meter"><span>${esc(m.k)}</span>
-      <div class="bar" role="meter" aria-label="${esc(m.label)}" aria-valuenow="${m.v}" aria-valuemin="0" aria-valuemax="${m.max}">
-        <i style="width:${(m.v / m.max * 100).toFixed(1)}%;--c:${m.c}"></i></div>
-      <small>${m.v.toLocaleString()}/${m.max.toLocaleString()} ${esc(m.label)}</small></div>`).join('');
-
-  $('#attrs').innerHTML = DATA.attrs.map(a => `
-    <div class="attr"><dt>${esc(a.k)}</dt><dd><span>${esc(a.label)} · ${a.v}/10</span>
-      <div class="segs" aria-hidden="true">${Array.from({ length: 10 }, (_, i) => `<i class="${i < a.v ? 'on' : ''}"></i>`).join('')}</div></dd></div>`).join('');
-
-  $('#bio').innerHTML = DATA.bio.map(p => `<p>${esc(p)}</p>`).join('');
-  $('#equip').innerHTML = DATA.equip.map(([k, v]) => `<span><b>${esc(k)}</b>${esc(v)}</span>`).join('');
-
-  const carts = $('#carts');
-  carts.innerHTML = DATA.projects.map((p, i) => `
-    <article class="cart-wrap">
-      <div class="cart">
-        <div class="cart-label" style="--c:${p.c}">
-          <div class="icon" data-i="${i}"></div>
-          <div><span class="w">WORLD ${esc(p.w)}</span><h3>${esc(p.title)}</h3></div>
-        </div>
-        <div class="cart-body">
-          <div class="cart-meta"><span>${esc(p.genre)} · ${p.year}</span>
-            <span class="stars" aria-label="Difficulty ${p.diff} of 5">${'★'.repeat(p.diff)}<span class="off">${'★'.repeat(5 - p.diff)}</span></span></div>
-          <p>${esc(p.blurb)}</p>
-          <ul class="tags">${p.tags.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
-          <a class="play" href="${esc(p.url)}">▶ PLAY ${esc(p.w)}</a>
-        </div>
-      </div>
-    </article>`).join('');
-  carts.querySelectorAll('.icon').forEach(el => el.appendChild(spriteCanvas(DATA.projects[+el.dataset.i].spr, 6)));
-  carts.querySelectorAll('.cart-wrap').forEach(el => el.addEventListener('mouseenter', () => Sound.select()));
-
-  const slots = $('#slots');
-  DATA.items.forEach((it, i) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'slot';
-    b.setAttribute('aria-pressed', 'false');
-    b.setAttribute('aria-label', `${it.name}, level ${it.lv}`);
-    b.appendChild(spriteCanvas(it.spr, 5, it.pal));
-    const q = document.createElement('span'); q.className = 'q'; q.textContent = `LV${it.lv}`; q.setAttribute('aria-hidden', 'true');
-    b.appendChild(q);
-    b.addEventListener('click', () => { selectItem(i); Sound.select(); });
-    b.addEventListener('keydown', e => {
-      const map = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 4, ArrowUp: -4 };
-      if (!(e.key in map)) return;
-      e.preventDefault();
-      const n = (i + map[e.key] + DATA.items.length) % DATA.items.length;
-      slots.children[n].focus(); selectItem(n); Sound.select();
-    });
-    slots.appendChild(b);
-  });
-  selectItem(0);
-
-  $('#questList').innerHTML = DATA.quests.map(q => `
-    <li class="win quest">
-      <div class="quest-when"><time>${esc(q.when)}</time>
-        <span class="pill ${q.active ? 'active' : 'done'}">${q.active ? '▶ ACTIVE' : '✔ CLEARED'}</span></div>
-      <div><h3>${esc(q.role)}</h3><span class="org">${esc(q.org)}</span>
-        <p>${esc(q.d)}</p><span class="reward"><b>REWARD</b>${esc(q.reward)}</span></div>
-    </li>`).join('');
-
-  $('#warps').innerHTML = `
-    <li><span class="addr" id="addr">${esc(DATA.email)}</span><button class="copy" type="button" id="copyAddr">COPY</button></li>
-    ${DATA.links.map(l => `<li><a class="warp" href="${esc(l.url)}" target="_blank" rel="noopener">▼ WARP TO ${esc(l.label)}</a></li>`).join('')}`;
+/* ---------- Moving between town and sections ---------- */
+function goToSection(id) {
+  const sec = document.getElementById(id);
+  if (!sec) return;
+  sec.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+  sec.focus({ preventScroll: true });
+  sec.classList.remove('arrive'); void sec.offsetWidth; sec.classList.add('arrive');
+  setTimeout(() => sec.classList.remove('arrive'), 1400);
 }
 
-function selectItem(i) {
-  const it = DATA.items[i];
-  [...$('#slots').children].forEach((b, n) => {
-    b.setAttribute('aria-pressed', n === i ? 'true' : 'false');
-    b.tabIndex = n === i ? 0 : -1;
-  });
-  const d = $('#detail');
-  d.innerHTML = `
-    <div class="detail-top"><div class="big"></div><div><span class="type">${esc(it.type)}</span><h3>${esc(it.name)}</h3></div></div>
-    <div class="meter"><span>LV</span><div class="bar"><i style="width:${it.lv * 10}%;--c:var(--gold)"></i></div><small>${it.lv}/10</small></div>
-    <p>${esc(it.d)}</p>`;
-  $('.big', d).appendChild(spriteCanvas(it.spr, 7, it.pal));
-}
-
-/* ---------- Clipboard ---------- */
-function copyText(text, btn, fallbackEl) {
-  const done = () => { const o = btn.textContent; btn.textContent = 'COPIED!'; setTimeout(() => (btn.textContent = o), 1400); Sound.coin(); };
-  const fallback = () => {
-    const r = document.createRange(); r.selectNodeContents(fallbackEl);
-    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-    btn.textContent = 'SELECTED: PRESS CTRL+C';
-  };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
-  else fallback();
-}
-
-/* ---------- Title starfield ---------- */
-function starfield() {
-  const c = $('#stars'), g = c.getContext('2d');
-  const W = c.width, H = c.height;
-  let seed = 7;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const stars = Array.from({ length: 90 }, () => ({ x: rnd() * W | 0, y: rnd() * H * .75 | 0, p: rnd() * 6.28, s: rnd() < .12 ? 2 : 1 }));
-  const ridge = (base, amp, step) => {
-    const pts = []; let y = base;
-    for (let x = 0; x <= W * 2; x += step) { y = Math.max(base - amp, Math.min(base + amp * .4, y + (rnd() - .5) * amp * .8)); pts.push(y | 0); }
-    return pts;
-  };
-  const far = ridge(H - 34, 22, 6), near = ridge(H - 14, 16, 4);
-  let visible = true, t0 = performance.now();
-  function draw(now) {
-    const t = (now - t0) / 1000;
-    g.clearRect(0, 0, W, H);
-    for (const s of stars) {
-      const a = .35 + .65 * Math.abs(Math.sin(t * 1.3 + s.p));
-      g.fillStyle = `rgba(255,244,220,${a.toFixed(2)})`;
-      g.fillRect(s.x, s.y, s.s, s.s);
-    }
-    // moon
-    g.fillStyle = '#fff4dc'; g.fillRect(W - 22, 5, 7, 7); g.fillRect(W - 23, 6, 9, 5);
-    g.fillStyle = '#0d0926'; g.fillRect(W - 19, 6, 5, 5);
-    const layer = (pts, step, col, speed) => {
-      const off = reduced ? 0 : (t * speed) % (W);
-      g.fillStyle = col;
-      for (let i = 0; i < pts.length; i++) {
-        const x = i * step - off;
-        if (x > W || x + step < 0) continue;
-        g.fillRect(Math.floor(x), pts[i], step, H - pts[i]);
-      }
-    };
-    layer(far, 6, '#2b1659', 3);
-    layer(near, 4, '#120c26', 8);
-    if (!reduced && visible) requestAnimationFrame(draw);
-  }
-  new IntersectionObserver(([e]) => {
-    const was = visible; visible = e.isIntersecting;
-    if (visible && !was && !reduced) requestAnimationFrame(draw);
-  }).observe(c);
-  requestAnimationFrame(draw);
-}
-
-/* ---------- Overworld ---------- */
-const MAP = [
-  'TTTTTTTTTTTTTTTTTTTT',
-  'T.f.....~~~~....f..T',
-  'T.###...~~~~...###.T',
-  'T.###...~~~~...###.T',
-  'T.#D#....S:....#D#.T',
-  'T..::::::::::::::..T',
-  'T.f......::.....f..T',
-  'T.###....::....###.T',
-  'T.###....::....###.T',
-  'T.#D#....::....#D#.T',
-  'T..::::::::::::::..T',
-  'TTTTTTTTTTTTTTTTTTTT',
+/* ==========================================================================
+   TOWN
+   The town has 6 building lots. Places fill them in the order of LOTS, so
+   three buildings make a balanced triangle and more fill in around them.
+   Empty lots get a pond or a grove of trees instead.
+   ========================================================================== */
+const TS = 16, COLS = 21, ROWS = 12;
+const LOTS = [
+  { c: 2, r: 2 },   // top left
+  { c: 16, r: 2 },  // top right
+  { c: 9, r: 7 },   // bottom middle
+  { c: 2, r: 7 },   // bottom left
+  { c: 16, r: 7 },  // bottom right
+  { c: 9, r: 2 },   // top middle
 ];
-const TS = 16, COLS = 20, ROWS = 12;
-const BUILDINGS = [
-  { c: 2, r: 2, roof: '#e0424f', dark: '#9e2438', id: 'character', label: 'HOME', who: "HERO'S HOUSE",
-    msg: "A cozy house. The plaque reads: \"Home of the hero.\" Step inside to meet them?" },
-  { c: 15, r: 2, roof: '#8a4fff', dark: '#5a2bb8', id: 'levels', label: 'ARCADE', who: 'THE ARCADE', neon: true,
-    msg: 'The arcade hums with neon. Six cabinets inside, each one a project. Insert coin?' },
-  { c: 2, r: 7, roof: '#2bb8a0', dark: '#1a7a6a', id: 'inventory', label: 'SHOP', who: 'ITEM SHOP',
-    msg: "\"Welcome, traveler! Every item on my shelves is a skill. Care to browse?\"" },
-  { c: 15, r: 7, roof: '#e8a417', dark: '#a8700a', id: 'quests', label: 'GUILD', who: 'GUILD HALL',
-    msg: 'The guild keeps a record of every quest completed. Read the quest log?' },
-];
-const CRYSTAL = { x: 9, y: 4, id: 'save', label: 'SAVE', who: 'SAVE CRYSTAL',
-  msg: 'A save crystal glows softly. Save your progress and send a message?' };
-const TRIGGERS = {};
-BUILDINGS.forEach(b => { TRIGGERS[`${b.c + 1},${b.r + 2}`] = b; });
-TRIGGERS[`${CRYSTAL.x},${CRYSTAL.y}`] = CRYSTAL;
-
-const COIN_SPOTS = [[5, 1], [13, 1], [6, 3], [12, 4], [2, 6], [7, 6], [13, 6], [18, 6], [6, 9], [13, 9], [4, 10], [17, 10]];
+const START = { x: 10, y: 5 };
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 const KEYS = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
 
+const PAL = { R: '#ff4f6d', K: '#1a1033', S: '#f2b78c', T: '#3ee0c5', B: '#4a7bff', N: '#6b4220' };
 const HERO = {
   down: ['...RRRR...', '..RRRRRR..', '.RRRRRRRR.', '..KSSSSK..', '..SKSSKS..', '..SSSSSS..', '...SSSS...', '..TTTTTT..', '.STTTTTTS.', '.S.TTTT.S.', '...BBBB...'],
   up: ['...RRRR...', '..RRRRRR..', '..RRRRRR..', '..KKKKKK..', '..KKKKKK..', '..SKKKKS..', '...SSSS...', '..TTTTTT..', '.STTTTTTS.', '.S.TTTT.S.', '...BBBB...'],
@@ -991,13 +610,51 @@ const HERO = {
   legs: [['..NN..NN..'], ['..NN...NN.'], ['.NN...NN..']],
 };
 
+function drawSprite(g, rows, x, y, flip = false) {
+  rows.forEach((r, j) => {
+    const row = flip ? [...r].reverse().join('') : r;
+    for (let i = 0; i < row.length; i++) {
+      if (row[i] === '.') continue;
+      g.fillStyle = PAL[row[i]];
+      g.fillRect(x + i, y + j, 1, 1);
+    }
+  });
+}
 function hash(x, y, i = 0) {
   let h = x * 374761393 + y * 668265263 + i * 2147483647;
   h = (h ^ (h >> 13)) * 1274126177;
   return ((h ^ (h >> 16)) >>> 0) / 4294967295;
 }
 
-function buildStatic() {
+function buildTown() {
+  const placed = places.slice(0, LOTS.length).map((p, i) => {
+    const lot = LOTS[i];
+    return { ...p, lot, door: { x: lot.c + 1, y: lot.r + 2 } };
+  });
+  const grid = Array.from({ length: ROWS }, (_, y) => Array.from({ length: COLS }, (_, x) =>
+    (x === 0 || y === 0 || x === COLS - 1 || y === ROWS - 1) ? 't' : 'g'));
+  const inLot = (x, y) => LOTS.some(l => x >= l.c && x < l.c + 3 && y >= l.r && y < l.r + 3);
+  for (let x = 1; x < COLS - 1; x++) { grid[5][x] = 'p'; grid[10][x] = 'p'; }
+  for (let y = 6; y < 10; y++) { grid[y][6] = 'p'; grid[y][14] = 'p'; }
+  LOTS.forEach((l, i) => {
+    if (placed[i]) {
+      for (let dy = 0; dy < 3; dy++) for (let dx = 0; dx < 3; dx++) grid[l.r + dy][l.c + dx] = 'b';
+      grid[l.r + 2][l.c + 1] = 'd';
+    } else if (l.r === 2 && l.c === 9) {
+      for (let dx = 0; dx < 3; dx++) { grid[l.r][l.c + dx] = 'w'; grid[l.r + 1][l.c + dx] = 'w'; }
+      grid[l.r + 2][l.c] = 'f'; grid[l.r + 2][l.c + 2] = 'f';
+    } else {
+      grid[l.r][l.c] = 't'; grid[l.r][l.c + 2] = 't'; grid[l.r + 1][l.c + 1] = 't';
+      grid[l.r + 2][l.c] = 'f'; grid[l.r + 2][l.c + 2] = 'f';
+    }
+  });
+  for (let y = 1; y < ROWS - 1; y++) for (let x = 1; x < COLS - 1; x++) {
+    if (grid[y][x] === 'g' && !inLot(x, y) && hash(x, y, 77) < .08) grid[y][x] = 'f';
+  }
+  return { grid, placed };
+}
+
+function paintStatic(grid, placed) {
   const c = document.createElement('canvas'); c.width = COLS * TS; c.height = ROWS * TS;
   const g = c.getContext('2d');
   const grass = (x, y) => {
@@ -1025,186 +682,136 @@ function buildStatic() {
       g.fillRect(X + i, Y + j, 1, 1);
     }
   };
-  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-    const t = MAP[y][x];
-    if (t === 'T') tree(x, y);
-    else if (t === ':' || t === 'S') path(x, y);
-    else if (t === '~') { /* water drawn per frame */ }
-    else {
-      grass(x, y);
-      if (t === 'f') {
-        const cols = ['#ff4f6d', '#ffcc33', '#fff4dc'];
-        for (let i = 0; i < 3; i++) {
-          const fx = x * TS + 3 + (hash(x, y, i + 40) * 10 | 0), fy = y * TS + 3 + (hash(x, y, i + 50) * 10 | 0);
-          g.fillStyle = cols[i]; g.fillRect(fx, fy, 2, 2);
-          g.fillStyle = '#2f7d3b'; g.fillRect(fx, fy + 2, 1, 2);
-        }
-      }
+  const flower = (x, y) => {
+    grass(x, y);
+    const cols = ['#ff4f6d', '#ffcc33', '#fff4dc'];
+    for (let i = 0; i < 3; i++) {
+      const fx = x * TS + 3 + (hash(x, y, i + 40) * 10 | 0), fy = y * TS + 3 + (hash(x, y, i + 50) * 10 | 0);
+      g.fillStyle = cols[i]; g.fillRect(fx, fy, 2, 2);
+      g.fillStyle = '#2f7d3b'; g.fillRect(fx, fy + 2, 1, 2);
     }
+  };
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    const t = grid[y][x];
+    if (t === 't') tree(x, y);
+    else if (t === 'p') path(x, y);
+    else if (t === 'f') flower(x, y);
+    else if (t !== 'w') grass(x, y);
   }
-  // pond rim
-  g.fillStyle = '#8f7a55';
-  g.fillRect(8 * TS - 1, 1 * TS - 1, 4 * TS + 2, 3 * TS + 2);
-  // buildings
-  for (const b of BUILDINGS) {
-    const X = b.c * TS, Y = b.r * TS, W = 3 * TS;
+  // pond rim (water itself shimmers, so it's drawn every frame)
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    if (grid[y][x] !== 'w') continue;
+    g.fillStyle = '#8f7a55'; g.fillRect(x * TS - 1, y * TS - 1, TS + 2, TS + 2);
+  }
+  for (const b of placed) {
+    const X = b.lot.c * TS, Y = b.lot.r * TS, W = 3 * TS;
+    const [roof, dark] = b.roof;
     g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(X + 4, Y + 22, W, 28);
     g.fillStyle = '#f3dfb0'; g.fillRect(X + 2, Y + 18, W - 4, 30);
     g.fillStyle = '#d8bf86'; g.fillRect(X + 2, Y + 44, W - 4, 4);
-    g.fillStyle = b.dark; g.fillRect(X - 2, Y + 6, W + 4, 14);
-    g.fillStyle = b.roof; g.fillRect(X - 2, Y + 4, W + 4, 12); g.fillRect(X + 3, Y, W - 6, 6); g.fillRect(X + 9, Y - 4, W - 18, 6);
-    g.fillStyle = b.dark;
+    g.fillStyle = dark; g.fillRect(X - 2, Y + 6, W + 4, 14);
+    g.fillStyle = roof; g.fillRect(X - 2, Y + 4, W + 4, 12); g.fillRect(X + 3, Y, W - 6, 6); g.fillRect(X + 9, Y - 4, W - 18, 6);
+    g.fillStyle = dark;
     for (let i = 0; i < W + 4; i += 6) g.fillRect(X - 2 + i, Y + 9, 3, 1);
     for (let i = 3; i < W - 6; i += 6) g.fillRect(X + 3 + i, Y + 3, 3, 1);
-    const win = b.neon ? '#ff6bd6' : '#6fb6ff';
     [[X + 6, Y + 24], [X + W - 14, Y + 24]].forEach(([wx, wy]) => {
       g.fillStyle = '#5a3a1a'; g.fillRect(wx - 1, wy - 1, 10, 10);
-      g.fillStyle = win; g.fillRect(wx, wy, 8, 8);
+      g.fillStyle = '#6fb6ff'; g.fillRect(wx, wy, 8, 8);
       g.fillStyle = '#5a3a1a'; g.fillRect(wx + 3, wy, 2, 8); g.fillRect(wx, wy + 3, 8, 2);
     });
     const dx = X + TS + 3, dy = Y + 30;
     g.fillStyle = '#4a2a12'; g.fillRect(dx - 1, dy - 1, 12, 19);
     g.fillStyle = '#7a4a22'; g.fillRect(dx, dy, 10, 18);
     g.fillStyle = '#ffcc33'; g.fillRect(dx + 7, dy + 9, 2, 2);
-    if (b.neon) { g.fillStyle = '#ff6bd6'; g.fillRect(X + 2, Y + 18, W - 4, 2); }
+    // doormat
+    g.fillStyle = dark; g.fillRect(dx - 1, Y + 48, 12, 2);
   }
   return c;
 }
 
-function initWorld() {
-  const el = $('#worldEl'), canvas = $('#map'), g = canvas.getContext('2d');
-  const dialog = $('#dialog'), dlgText = $('#dlgText'), dlgWho = $('#dlgWho'), toast = $('#toast');
-  const choiceBtns = [...dialog.querySelectorAll('.choices button')];
-  const staticLayer = buildStatic();
+function initTown() {
+  const world = $('#world'), canvas = $('#map'), g = canvas.getContext('2d'), wipe = $('#wipe');
+  const { grid, placed } = buildTown();
+  const staticLayer = paintStatic(grid, placed);
+  const doorAt = {};
+  placed.forEach(p => { doorAt[`${p.door.x},${p.door.y}`] = p; });
 
-  // building labels
   const labels = $('#labels');
-  const addLabel = (text, cx, top, cls) => {
-    const s = document.createElement('span');
-    s.textContent = text; if (cls) s.className = cls;
-    s.style.left = `${cx / (COLS * TS) * 100}%`; s.style.top = `${top / (ROWS * TS) * 100}%`;
-    labels.appendChild(s);
-  };
-  BUILDINGS.forEach(b => addLabel(b.label, (b.c + 1.5) * TS, b.r * TS - 5, b.neon ? 'neon' : ''));
-  addLabel(CRYSTAL.label, (CRYSTAL.x + .5) * TS, CRYSTAL.y * TS - 6, 'save');
+  placed.forEach(p => {
+    const s = el('span', { text: p.name });
+    s.style.left = `${(p.lot.c + 1.5) / COLS * 100}%`;
+    s.style.top = `${(p.lot.r * TS - 5) / (ROWS * TS) * 100}%`;
+    labels.append(s);
+  });
 
-  const total = COIN_SPOTS.length;
-  $('#coinTotal').textContent = total; $('#coinTotal2').textContent = total;
-  const coins = COIN_SPOTS.map(([x, y]) => ({ x, y, taken: false }));
-  const sparks = [];
-  let score = 0, lives = 3;
-  let hi = parseInt(store.get('pq-hi') || '0', 10) || 0;
-  const pad2 = n => String(n).padStart(2, '0');
-  const hud = () => { $('#coins').textContent = pad2(score); $('#lives').textContent = pad2(lives); $('#hi').textContent = pad2(hi); };
-  hud();
-
-  const P = { tx: 10, ty: 7, x: 10 * TS, y: 7 * TS, dir: 'down', moving: false, fx: 0, fy: 0, t: 0, step: 0 };
+  const walkable = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS && 'gpf'.includes(grid[y][x]);
+  const P = { tx: START.x, ty: START.y, x: START.x * TS, y: START.y * TS, dir: 'down', moving: false, fx: 0, fy: 0, t: 0, step: 0, goal: null };
   const held = [];
-  let dlg = null, choice = 0, typing = null, typedFull = '', lockUntilRelease = false, toastTimer = null;
-  let running = false, visible = false, last = 0;
+  let entering = false, visible = false, running = false, last = 0;
 
-  const isSolid = (x, y) => {
-    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return true;
-    return 'T~#DS'.includes(MAP[y][x]);
-  };
-
-  function showToast(text) {
-    toast.textContent = text; toast.hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => (toast.hidden = true), 2200);
-  }
-
-  function setChoice(n) {
-    choice = n;
-    choiceBtns.forEach((b, i) => b.classList.toggle('sel', i === n));
-  }
-  function openDialog(trig) {
-    dlg = trig; held.length = 0;
-    dialog.hidden = false; dlgWho.textContent = trig.who;
-    setChoice(0);
-    typedFull = trig.msg; dlgText.textContent = '';
-    Sound.select();
-    clearInterval(typing);
-    if (reduced) { dlgText.textContent = typedFull; return; }
-    let i = 0;
-    typing = setInterval(() => {
-      i++; dlgText.textContent = typedFull.slice(0, i);
-      if (i % 3 === 0) Sound.tick();
-      if (i >= typedFull.length) { clearInterval(typing); typing = null; }
-    }, 22);
-  }
-  function closeDialog() {
-    clearInterval(typing); typing = null;
-    dialog.hidden = true; dlg = null; lockUntilRelease = true;
-  }
-  function confirm() {
-    if (!dlg) return;
-    if (typing) { clearInterval(typing); typing = null; dlgText.textContent = typedFull; return; }
-    if (choice === 1) { Sound.cancel(); closeDialog(); return; }
-    const id = dlg.id;
-    closeDialog();
-    Sound.confirm();
-    goTo(id);
+  function enter(place) {
+    if (entering) return;
+    entering = true; held.length = 0; P.goal = null; P.dir = 'down';
+    const done = () => { wipe.hidden = true; wipe.classList.remove('run'); entering = false; goToSection(place.id); };
+    if (reduced) { done(); return; }
+    wipe.style.setProperty('--x', `${(place.door.x + .5) / COLS * 100}%`);
+    wipe.style.setProperty('--y', `${(place.door.y + .5) / ROWS * 100}%`);
+    wipe.hidden = false; wipe.classList.remove('run'); void wipe.offsetWidth; wipe.classList.add('run');
+    setTimeout(done, 460);
   }
 
-  function interact() {
-    if (dlg) { confirm(); return; }
-    if (P.moving) return;
-    const [dx, dy] = DIRS[P.dir];
-    const trig = TRIGGERS[`${P.tx + dx},${P.ty + dy}`];
-    if (trig) openDialog(trig);
-  }
-
-  function collect() {
-    for (const c of coins) {
-      if (c.taken || c.x !== P.tx || c.y !== P.ty) continue;
-      c.taken = true; score++;
-      Sound.coin();
-      for (let i = 0; i < 8; i++) sparks.push({ x: c.x * TS + 8, y: c.y * TS + 8, vx: Math.cos(i / 8 * 6.28) * 40, vy: Math.sin(i / 8 * 6.28) * 40, life: .45 });
-      if (score > hi) { hi = score; store.set('pq-hi', String(hi)); }
-      if (score === total) {
-        lives++;
-        setTimeout(() => Sound.oneUp(), 350);
-        showToast('PERFECT! ALL COINS · 1UP');
+  // shortest path (breadth-first) toward a goal tile; returns the first direction to step
+  function nextStep(fromX, fromY, toX, toY) {
+    const key = (x, y) => y * COLS + x;
+    const prev = new Map([[key(fromX, fromY), null]]);
+    const q = [[fromX, fromY]];
+    while (q.length) {
+      const [x, y] = q.shift();
+      if (x === toX && y === toY) {
+        let k = key(x, y), before = prev.get(k);
+        while (before !== null && before !== key(fromX, fromY)) { k = before; before = prev.get(k); }
+        const kx = k % COLS, ky = (k / COLS) | 0;
+        return Object.keys(DIRS).find(d => fromX + DIRS[d][0] === kx && fromY + DIRS[d][1] === ky);
       }
-      hud();
+      for (const [dx, dy] of Object.values(DIRS)) {
+        const nx = x + dx, ny = y + dy, k = key(nx, ny);
+        if (walkable(nx, ny) && !prev.has(k)) { prev.set(k, key(x, y)); q.push([nx, ny]); }
+      }
     }
+    return null;
+  }
+
+  function tryStep(dir) {
+    const [dx, dy] = DIRS[dir];
+    P.dir = dir;
+    const nx = P.tx + dx, ny = P.ty + dy;
+    const door = doorAt[`${nx},${ny}`];
+    if (door) { enter(door); return; }
+    if (walkable(nx, ny)) { P.moving = true; P.fx = dx; P.fy = dy; P.t = 0; P.step++; }
   }
 
   function update(dt) {
-    sparks.forEach(s => { s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt; });
-    for (let i = sparks.length - 1; i >= 0; i--) if (sparks[i].life <= 0) sparks.splice(i, 1);
-    if (held.length === 0) lockUntilRelease = false;
+    if (entering) return;
     if (P.moving) {
-      P.t += dt / 0.15;
-      if (P.t >= 1) {
-        P.moving = false; P.tx += P.fx; P.ty += P.fy; P.x = P.tx * TS; P.y = P.ty * TS;
-        collect();
-      } else {
-        P.x = (P.tx + P.fx * P.t) * TS; P.y = (P.ty + P.fy * P.t) * TS;
-      }
+      P.t += dt / 0.14;
+      if (P.t >= 1) { P.moving = false; P.tx += P.fx; P.ty += P.fy; P.x = P.tx * TS; P.y = P.ty * TS; }
+      else { P.x = (P.tx + P.fx * P.t) * TS; P.y = (P.ty + P.fy * P.t) * TS; }
     }
-    if (!P.moving && !dlg && held.length) {
-      const dir = held[held.length - 1];
-      const [dx, dy] = DIRS[dir];
-      P.dir = dir;
-      const nx = P.tx + dx, ny = P.ty + dy;
-      if (isSolid(nx, ny)) {
-        const trig = TRIGGERS[`${nx},${ny}`];
-        if (trig && !lockUntilRelease) openDialog(trig);
-        else if (!trig && P.bumpT <= 0) { Sound.bump(); P.bumpT = .35; }
-      } else {
-        P.moving = true; P.fx = dx; P.fy = dy; P.t = 0; P.step++;
-      }
+    if (P.moving) return;
+    if (held.length) { P.goal = null; tryStep(held[held.length - 1]); return; }
+    if (P.goal) {
+      const { x, y, place } = P.goal;
+      if (P.tx === x && P.ty === y) { P.goal = null; if (place) tryStep('up'); return; }
+      const d = nextStep(P.tx, P.ty, x, y);
+      if (d) tryStep(d); else P.goal = null;
     }
-    P.bumpT = Math.max(0, (P.bumpT || 0) - dt);
   }
 
   function draw(now) {
     const t = now / 1000;
     g.drawImage(staticLayer, 0, 0);
-    // water
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-      if (MAP[y][x] !== '~') continue;
+      if (grid[y][x] !== 'w') continue;
       g.fillStyle = '#2f6fd6'; g.fillRect(x * TS, y * TS, TS, TS);
       g.fillStyle = '#6fa8ff';
       for (let k = 0; k < 2; k++) {
@@ -1212,30 +819,23 @@ function initWorld() {
         g.fillRect(x * TS + wx, y * TS + 4 + k * 7, 4, 1);
       }
     }
-    // coins
-    coins.forEach((c, i) => {
-      if (c.taken) return;
-      const bob = reduced ? 0 : Math.round(Math.sin(t * 4 + i) * 1.5);
-      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(c.x * TS + 6, c.y * TS + 12, 5, 1);
-      drawSprite(g, SPR.coin, c.x * TS + 6, c.y * TS + 5 + bob);
-    });
-    // crystal
-    const cb = reduced ? 0 : Math.round(Math.sin(t * 2.5) * 2);
-    g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(CRYSTAL.x * TS + 4, CRYSTAL.y * TS + 13, 8, 2);
-    drawSprite(g, SPR.crystal, CRYSTAL.x * TS + 4, CRYSTAL.y * TS + 3 + cb);
-    if (!reduced && Math.sin(t * 3) > .7) { g.fillStyle = '#fff4dc'; g.fillRect(CRYSTAL.x * TS + 2, CRYSTAL.y * TS + 2 + cb, 1, 1); g.fillRect(CRYSTAL.x * TS + 13, CRYSTAL.y * TS + 6 + cb, 1, 1); }
-    // hero
+    // goal marker
+    if (P.goal && !P.goal.place) {
+      g.fillStyle = Math.sin(t * 10) > 0 ? '#ffcc33' : '#fff4dc';
+      const gx = P.goal.x * TS, gy = P.goal.y * TS;
+      g.fillRect(gx + 3, gy + 3, 3, 1); g.fillRect(gx + 3, gy + 3, 1, 3);
+      g.fillRect(gx + 10, gy + 3, 3, 1); g.fillRect(gx + 12, gy + 3, 1, 3);
+      g.fillRect(gx + 3, gy + 12, 3, 1); g.fillRect(gx + 3, gy + 10, 1, 3);
+      g.fillRect(gx + 10, gy + 12, 3, 1); g.fillRect(gx + 12, gy + 10, 1, 3);
+    }
     const px = Math.round(P.x) + 3, py = Math.round(P.y) + 3;
-    const walking = P.moving;
-    const frame = walking ? (P.t < .5 ? 1 + (P.step % 2) : 0) : 0;
-    const bob = walking && frame ? -1 : 0;
+    const frame = P.moving ? (P.t < .5 ? 1 + (P.step % 2) : 0) : 0;
+    const bob = P.moving && frame ? -1 : 0;
     g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(px + 1, py + 11, 8, 2);
     const body = P.dir === 'up' ? HERO.up : P.dir === 'down' ? HERO.down : HERO.side;
     const flip = P.dir === 'left';
-    drawSprite(g, body, px, py + bob - 1, 1, {}, flip);
-    drawSprite(g, HERO.legs[frame], px, py + bob + 10, 1, {}, flip);
-    // sparks
-    sparks.forEach(s => { g.fillStyle = s.life > .2 ? '#fff4dc' : '#ffcc33'; g.fillRect(s.x | 0, s.y | 0, 1, 1); });
+    drawSprite(g, body, px, py + bob - 1, flip);
+    drawSprite(g, HERO.legs[frame], px, py + bob + 10, flip);
   }
 
   function loop(now) {
@@ -1243,170 +843,75 @@ function initWorld() {
     update(dt); draw(now);
     if (visible) requestAnimationFrame(loop); else running = false;
   }
-  function kick() { if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); } }
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) kick(); }).observe(el);
+  new IntersectionObserver(([e]) => {
+    visible = e.isIntersecting;
+    if (visible && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
+  }).observe(world);
   draw(performance.now());
 
-  // focus model: the game only takes keys while it's focused
-  // touch play stays active until the player taps outside the game; keyboard play follows focus
-  let touchActive = false;
-  const pad = $('#pad');
-  const setActive = () => el.classList.toggle('active', touchActive || el.contains(document.activeElement));
-  document.addEventListener('pointerdown', e => {
-    const inGame = el.contains(e.target) || pad.contains(e.target);
-    if (inGame && e.pointerType !== 'mouse') touchActive = true;
-    else if (!inGame) touchActive = false;
-    setActive();
-  }, true);
-  el.addEventListener('focusin', setActive);
-  el.addEventListener('focusout', () => setTimeout(() => { setActive(); if (!el.classList.contains('active')) held.length = 0; }, 0));
-  el.addEventListener('pointerdown', e => {
-    if (e.target.closest('.choices button')) return;
-    if (!el.classList.contains('active')) { el.focus({ preventScroll: true }); }
-  });
-
-  el.addEventListener('keydown', e => {
+  // keyboard: only while the town has focus, so arrow keys still scroll the page elsewhere
+  world.addEventListener('keydown', e => {
     const dir = KEYS[e.code];
-    if (dlg) {
-      if (dir || ['Enter', 'Space', 'KeyZ', 'KeyE', 'Escape', 'KeyX'].includes(e.code)) e.preventDefault();
-      if (dir === 'left' || dir === 'right' || dir === 'up' || dir === 'down') { if (!e.repeat) { setChoice(choice ? 0 : 1); Sound.select(); } }
-      else if (['Enter', 'Space', 'KeyZ', 'KeyE'].includes(e.code)) { if (!e.repeat) confirm(); }
-      else if (e.code === 'Escape' || e.code === 'KeyX') { Sound.cancel(); closeDialog(); }
-      return;
-    }
-    if (dir) {
+    if (dir) { e.preventDefault(); if (!held.includes(dir)) held.push(dir); }
+    else if (e.code === 'Enter' || e.code === 'Space') {
       e.preventDefault();
-      if (!held.includes(dir)) held.push(dir);
-    } else if (['Enter', 'Space', 'KeyZ', 'KeyE'].includes(e.code)) {
-      e.preventDefault(); if (!e.repeat) interact();
+      const [dx, dy] = DIRS[P.dir];
+      const door = doorAt[`${P.tx + dx},${P.ty + dy}`];
+      if (door && !P.moving) enter(door);
     }
   });
-  window.addEventListener('keyup', e => {
-    const dir = KEYS[e.code];
-    if (dir) { const i = held.indexOf(dir); if (i >= 0) held.splice(i, 1); }
-  });
+  const release = dir => { const i = held.indexOf(dir); if (i >= 0) held.splice(i, 1); };
+  window.addEventListener('keyup', e => { if (KEYS[e.code]) release(KEYS[e.code]); });
   window.addEventListener('blur', () => { held.length = 0; });
+  world.addEventListener('focusout', () => { held.length = 0; });
 
-  choiceBtns.forEach((b, i) => {
-    b.addEventListener('click', e => { e.stopPropagation(); setChoice(i); if (typing) { clearInterval(typing); typing = null; dlgText.textContent = typedFull; } confirm(); });
-    b.addEventListener('mouseenter', () => { if (choice !== i) { setChoice(i); Sound.select(); } });
+  // click or tap to walk; tapping a building walks to its door and goes in
+  canvas.addEventListener('click', e => {
+    const r = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - r.left) / r.width * COLS);
+    const y = Math.floor((e.clientY - r.top) / r.height * ROWS);
+    const place = placed.find(p => x >= p.lot.c && x < p.lot.c + 3 && y >= p.lot.r - 1 && y < p.lot.r + 3);
+    if (place) P.goal = { x: place.door.x, y: place.door.y + 1, place };
+    else if (walkable(x, y)) P.goal = { x, y };
   });
 
-  // touch pad
-  pad.querySelectorAll('button').forEach(b => {
-    const dir = b.dataset.dir, btn = b.dataset.btn;
-    const release = () => {
-      b.classList.remove('down');
-      if (dir) { const i = held.indexOf(dir); if (i >= 0) held.splice(i, 1); }
-    };
+  // on-screen pad
+  $('#pad').querySelectorAll('button').forEach(b => {
+    const dir = b.dataset.dir;
+    const up = () => { b.classList.remove('down'); release(dir); };
     b.addEventListener('pointerdown', e => {
       e.preventDefault();
       b.classList.add('down');
-      touchActive = true; setActive();
-      if (dir) {
-        if (dlg) { setChoice(choice ? 0 : 1); Sound.select(); return; }
-        if (!held.includes(dir)) held.push(dir);
-      } else if (btn === 'a') interact();
-      else if (btn === 'b' && dlg) { Sound.cancel(); closeDialog(); }
+      if (!held.includes(dir)) held.push(dir);
     });
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, release));
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, up));
     b.addEventListener('contextmenu', e => e.preventDefault());
   });
 
-  return {
-    focus() { el.focus({ preventScroll: true }); },
-    allCoins() {
-      coins.forEach(c => (c.taken = true));
-      score = total; lives = 30;
-      if (score > hi) { hi = score; store.set('pq-hi', String(hi)); }
-      hud();
-    },
-  };
-}
-
-function goTo(id) {
-  const sec = document.getElementById(id);
-  if (!sec) return;
-  sec.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-  sec.focus({ preventScroll: true });
-  sec.classList.remove('arrive'); void sec.offsetWidth; sec.classList.add('arrive');
-  setTimeout(() => sec.classList.remove('arrive'), 1600);
+  return { focus: () => world.focus({ preventScroll: true }) };
 }
 
 /* ---------- Boot ---------- */
-renderContent();
-hydrate();
-starfield();
-const world = initWorld();
+renderPage();
+const town = initTown();
 
-// mute toggle
-const muteBtn = $('#mute');
-const paintMute = () => { muteBtn.textContent = Sound.muted ? '♪ OFF' : '♪ ON'; muteBtn.setAttribute('aria-pressed', String(Sound.muted)); };
-paintMute();
-muteBtn.addEventListener('click', () => { Sound.muted = !Sound.muted; paintMute(); Sound.select(); });
+if (matchMedia('(pointer: fine)').matches) town.focus();
 
-// PRESS START
-$('#start').addEventListener('click', () => {
-  Sound.start();
-  const w = $('#world');
-  w.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-  setTimeout(() => world.focus(), reduced ? 0 : 450);
+document.addEventListener('click', e => {
+  const back = e.target.closest('[data-back]');
+  if (!back) return;
+  e.preventDefault();
+  $('#town').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+  town.focus();
 });
 
-// highlight current stage in HUD nav
-const navLinks = [...document.querySelectorAll('.hud-nav a')];
-const io = new IntersectionObserver(entries => {
+const links = [...document.querySelectorAll('.hud-nav a')];
+const spy = new IntersectionObserver(entries => {
   entries.forEach(e => {
-    if (!e.isIntersecting) return;
-    navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${e.target.id}`));
+    if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${e.target.id}`));
   });
 }, { rootMargin: '-45% 0px -50% 0px' });
-document.querySelectorAll('.stage').forEach(s => io.observe(s));
-
-// contact form
-const form = $('#form');
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  if (!form.reportValidity()) { Sound.bump(); return; }
-  const name = $('#f-name').value.trim(), email = $('#f-email').value.trim(), msg = $('#f-msg').value.trim();
-  const body = `Hi ${DATA.firstName},\n\n${msg}\n\n— ${name} (${email})`;
-  $('#savedText').textContent = body;
-  $('#mailLink').href = `mailto:${DATA.email}?subject=${encodeURIComponent(`New quest from ${name}`)}&body=${encodeURIComponent(body)}`;
-  $('#saved').hidden = false;
-  Sound.confirm();
-});
-$('#copyMsg').addEventListener('click', e => copyText($('#savedText').textContent, e.currentTarget, $('#savedText')));
-$('#copyAddr').addEventListener('click', e => copyText(DATA.email, e.currentTarget, $('#addr')));
-
-// continue countdown
-const countEl = $('#count');
-let counting = false;
-new IntersectionObserver(([e]) => {
-  if (!e.isIntersecting || counting) return;
-  counting = true;
-  let n = 9;
-  const tick = () => {
-    countEl.textContent = n;
-    if (n === 0) { countEl.textContent = 'GAME OVER'; countEl.style.fontSize = 'clamp(22px, 6vw, 48px)'; $('#credits').textContent = 'Just kidding. Your save file is safe.'; return; }
-    n--; setTimeout(tick, 900);
-  };
-  tick();
-}, { threshold: .6 }).observe($('#continue'));
-
-// Konami code
-const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
-let kpos = 0;
-document.addEventListener('keydown', e => {
-  if (e.target.matches && e.target.matches('input, textarea')) return;
-  kpos = e.code === KONAMI[kpos] ? kpos + 1 : (e.code === KONAMI[0] ? 1 : 0);
-  if (kpos === KONAMI.length) {
-    kpos = 0;
-    document.body.classList.add('cheat');
-    world.allCoins();
-    Sound.oneUp();
-    $('#credits').textContent = 'CHEAT ACTIVATED: 30 LIVES. You remembered the code.';
-  }
-});
+document.querySelectorAll('.town, .stage').forEach(s => spy.observe(s));
 })();
 </script>
 </body>
