@@ -205,7 +205,29 @@ a { color: var(--teal); }
 .hud-nav a:focus-visible { outline-offset: -2px; }
 
 /* ---------- Town ---------- */
-.town { padding-block: 40px 56px; scroll-margin-top: 60px; }
+.town { position: relative; overflow: hidden; padding-block: 40px 56px; scroll-margin-top: 60px; }
+.town > .wrap { position: relative; }
+/* Shooting star: drifts slowly across the top of the page while hovering up and down */
+.sky { position: absolute; inset: 0 0 auto; height: 160px; pointer-events: none; }
+.comet { position: absolute; top: 18px; left: 8%; animation: fly 18s linear infinite; }
+.comet-bob { display: block; animation: hover 2.6s ease-in-out infinite; }
+.comet .head {
+  position: absolute; left: 0; top: 0; width: 6px; height: 6px; background: #fff8e0;
+  box-shadow: 0 -4px 0 -1px var(--gold), 0 4px 0 -1px var(--gold), -4px 0 0 -1px var(--gold), 4px 0 0 -1px var(--gold), 0 0 12px 3px rgba(255, 204, 51, .55);
+  animation: pulse .9s steps(2) infinite;
+}
+.comet .tail {
+  position: absolute; right: 2px; top: 1px; width: 120px; height: 4px;
+  background: linear-gradient(to left, #fff8e0 0 8%, var(--gold) 8% 30%, rgba(255, 138, 31, .55) 30% 58%, rgba(255, 79, 109, .25) 58% 82%, rgba(255, 79, 109, .08) 82% 100%);
+}
+.comet .tail::after {
+  content: ""; position: absolute; right: 18px; top: -6px; width: 70px; height: 2px;
+  background: repeating-linear-gradient(to left, rgba(255, 244, 220, .6) 0 4px, transparent 4px 12px);
+  -webkit-mask-image: linear-gradient(to left, #000, transparent); mask-image: linear-gradient(to left, #000, transparent);
+}
+@keyframes fly { from { transform: translate(-30vw, 0); } to { transform: translate(110vw, 46px); } }
+@keyframes hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes pulse { 50% { background: var(--gold); } }
 .town:focus { outline: none; }
 .town-head { display: grid; gap: 12px; justify-items: center; text-align: center; margin-bottom: 30px; }
 .title-box { position: relative; padding: .5em .9em .7em; font-size: clamp(34px, 11vw, 96px); max-width: 100%; }
@@ -418,6 +440,7 @@ dialog.lb::backdrop { background: rgba(10, 7, 30, .88); }
 
 <main>
   <section class="town" id="town" tabindex="-1" aria-labelledby="siteName">
+    <div class="sky" aria-hidden="true"><div class="comet"><span class="comet-bob"><i class="tail"></i><i class="head"></i></span></div></div>
     <div class="wrap">
       <div class="town-head">
         <div class="title-box">
