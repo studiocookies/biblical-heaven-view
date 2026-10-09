@@ -1248,7 +1248,16 @@ function initWorld() {
   draw(performance.now());
 
   // focus model: the game only takes keys while it's focused
-  const setActive = () => el.classList.toggle('active', el.contains(document.activeElement));
+  // touch play stays active until the player taps outside the game; keyboard play follows focus
+  let touchActive = false;
+  const pad = $('#pad');
+  const setActive = () => el.classList.toggle('active', touchActive || el.contains(document.activeElement));
+  document.addEventListener('pointerdown', e => {
+    const inGame = el.contains(e.target) || pad.contains(e.target);
+    if (inGame && e.pointerType !== 'mouse') touchActive = true;
+    else if (!inGame) touchActive = false;
+    setActive();
+  }, true);
   el.addEventListener('focusin', setActive);
   el.addEventListener('focusout', () => setTimeout(() => { setActive(); if (!el.classList.contains('active')) held.length = 0; }, 0));
   el.addEventListener('pointerdown', e => {
@@ -1284,7 +1293,7 @@ function initWorld() {
   });
 
   // touch pad
-  $('#pad').querySelectorAll('button').forEach(b => {
+  pad.querySelectorAll('button').forEach(b => {
     const dir = b.dataset.dir, btn = b.dataset.btn;
     const release = () => {
       b.classList.remove('down');
@@ -1293,7 +1302,7 @@ function initWorld() {
     b.addEventListener('pointerdown', e => {
       e.preventDefault();
       b.classList.add('down');
-      el.focus({ preventScroll: true });
+      touchActive = true; setActive();
       if (dir) {
         if (dlg) { setChoice(choice ? 0 : 1); Sound.select(); return; }
         if (!held.includes(dir)) held.push(dir);
