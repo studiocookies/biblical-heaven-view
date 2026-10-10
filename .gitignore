@@ -4,3 +4,7 @@ __pycache__/
 *.egg-info/
 .env
 *.db
+obsidian/node_modules/
+obsidian/dist/
+obsidian/release/
+obsidian/test/e2e/artifacts/
