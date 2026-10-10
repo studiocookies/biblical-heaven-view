@@ -106,3 +106,17 @@ renderer and a ~60-line esbuild script for main/preload. Fewer moving parts.
 | `claude agents` may be missing in older versions | Capability-detected; status falls back to "process running". |
 | Resuming a session that never received a prompt fails in the CLI | Resume is only offered when a transcript exists; otherwise Claude's error is shown verbatim in the terminal. |
 | Electron footprint (~200 MB on disk, ~150 MB RAM) | Accepted for terminal fidelity and UI richness; no other background services. |
+
+## 6. Addenda: decisions forced by testing
+
+These came out of running the real app end to end. Each one is covered by a test.
+
+| Finding | Decision |
+| --- | --- |
+| A session started from inside another Claude Code session inherited `CLAUDE_CODE_CHILD_SESSION`, so Claude Code turned transcript saving off (no model, history or resume). | Strip parent-session identity markers from child environments, and never strip user configuration (`src/main/env.ts`, unit-tested). |
+| node-pty's macOS prebuild ships `spawn-helper` without the executable bit, so every spawn fails with `posix_spawnp failed`. | `postinstall` restores `+x`, and the session manager repairs it at runtime or reports the exact `chmod` to run. node-pty is `asarUnpack`ed. |
+| Chromium's `scrollIntoView()` now returns a Promise. An expression-bodied `useEffect` handed it to React as a cleanup, which crashed the whole renderer. | All effects use block bodies. Each region (navigator, workspace, intelligence, bottom panel, palette) has its own error boundary. Sessions live in the main process, so "Reload interface" is always safe. |
+| Claude Code generates conversation titles from your prompt. Persisting them would copy prompt content to disk. | Titles are read live from Claude's transcripts and never stored. |
+| A keystroke can reach both the renderer handler and a native menu accelerator. | Commands are deduplicated by source (keyboard vs. menu). Repeated keypresses are never swallowed. |
+| An explicitly configured `claude` path that goes missing could silently fall back to some other binary. | An explicit choice is never replaced. Detection reports it as missing. |
+| On small windows, fixed panel widths starved the terminal. | Side panels shrink in proportion, down to their minimum widths, so the terminal keeps at least ~460 px. |

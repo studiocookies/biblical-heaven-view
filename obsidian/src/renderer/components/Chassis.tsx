@@ -43,9 +43,6 @@ export function TitleBar() {
     <header className="titlebar mat-brushed">
       <div className={isMac ? 'traffic-space' : 'traffic-space-none'} />
       <Wordmark />
-      <div className="screw-row" aria-hidden="true">
-        <span className="screw" />
-      </div>
       <div className="titlebar-center">
         {project ? (
           <div className="title-chip bezel-sm" title={project.root}>

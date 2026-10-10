@@ -83,9 +83,11 @@ function seedUserData(projects, settings = {}) {
 }
 
 async function launch(userData, extraEnv = {}) {
+  // OBSIDIAN_E2E_BINARY=<packaged executable> runs the suite against a packaged build.
+  const packaged = process.env.OBSIDIAN_E2E_BINARY;
   const app = await _electron.launch({
-    executablePath: electronPath,
-    args: [ROOT],
+    executablePath: packaged ?? electronPath,
+    args: packaged ? [] : [ROOT],
     cwd: ROOT,
     env: { ...process.env, OBSIDIAN_USER_DATA: userData, ...extraEnv },
   });
@@ -412,11 +414,88 @@ async function suiteClaude() {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+async function suiteGallery() {
+  console.log('\n▸ Visual gallery (layouts and views)');
+  const a = makeRepo('apollo-guidance', true);
+  const b = makeRepo('lunar-module', false);
+  const ud = seedUserData([a, b], { onboarded: false });
+  const { app, win, errors } = await launch(ud);
+  try {
+    await win.waitForSelector('.gauge:has-text("OK")', { timeout: 30000 });
+    await sleep(1200);
+    await win.screenshot({ path: path.join(OUT, '10-home-projects.png') });
+    await win.keyboard.press(`${MOD}+Shift+P`);
+    await win.fill('.palette-input', 'session');
+    await sleep(300);
+    await win.screenshot({ path: path.join(OUT, '11-command-palette.png') });
+    check('Command palette lists session commands', (await win.$$('.palette-item')).length >= 5);
+    await win.keyboard.press('Escape');
+    await win.keyboard.press(`${MOD}+P`);
+    await win.fill('.palette-input', 'app');
+    await win.waitForSelector('.palette-item:has-text("app.ts")', { timeout: 5000 });
+    check('Quick open finds files by fuzzy name', await win.isVisible('.palette-item:has-text("app.ts")'));
+    await win.keyboard.press('Enter');
+    await win.waitForSelector('.code-view');
+    await win.click('.rail-btn:has-text("Agents")');
+    await sleep(1500);
+    await win.screenshot({ path: path.join(OUT, '12-agents.png') });
+    await win.click('.rail-btn:has-text("Settings")');
+    await sleep(600);
+    await win.screenshot({ path: path.join(OUT, '13-settings.png') });
+    // tasks: add, complete, persist
+    await win.click('.intel .seg-tab:has-text("Tasks")');
+    await win.fill('.task-add .input', 'Calibrate the star tracker');
+    await win.keyboard.press('Enter');
+    await win.click('.task-row:has-text("Calibrate") .check');
+    await sleep(400);
+    const tasks = JSON.parse(fs.readFileSync(path.join(ud, 'tasks.json'), 'utf8'));
+    check('Tasks can be added and completed, and persist', tasks.length === 1 && tasks[0].done === true && tasks[0].title === 'Calibrate the star tracker', JSON.stringify(tasks));
+    // minimum window size
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(980, 620));
+    await win.keyboard.press(`${MOD}+Shift+T`);
+    await win.waitForSelector('.session-view .xterm');
+    await sleep(1500);
+    await win.screenshot({ path: path.join(OUT, '14-minimum-size.png') });
+    const overflow = await win.evaluate(() => document.documentElement.scrollWidth > window.innerWidth || document.documentElement.scrollHeight > window.innerHeight);
+    check('No page overflow at the minimum window size (980×620)', !overflow);
+    check('No uncaught renderer errors', errors.length === 0, errors.join(' | '));
+  } finally {
+    await closeApp(app, win);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+async function suiteLifecycle() {
+  console.log('\n▸ Quit with running sessions');
+  const repo = makeRepo('quit-test', false);
+  const ud = seedUserData([repo], { onboarded: true });
+  const { app, win } = await launch(ud);
+  await win.keyboard.press(`${MOD}+Shift+T`);
+  const sess = await waitFor(async () => (await win.evaluate(() => window.obsidian.invoke('session:list'))).find((s) => s.state === 'running'));
+  const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  // Only the native dialog's answer is simulated; the quit logic itself is real.
+  await app.evaluate(({ dialog }) => { globalThis.__asked = 0; dialog.showMessageBox = async () => { globalThis.__asked++; return { response: 1, checkboxChecked: false }; }; });
+  await app.evaluate(({ app: a }) => a.quit());
+  await sleep(1200);
+  const asked = await app.evaluate(() => globalThis.__asked);
+  check('Quitting with a running session asks for confirmation', asked === 1, `asked=${asked}`);
+  check('Cancelling the quit keeps the app and the session running', alive(sess.pid) && (await win.evaluate(() => window.obsidian.invoke('session:list')))[0].state === 'running');
+  await app.evaluate(({ dialog }) => { dialog.showMessageBox = async () => ({ response: 0, checkboxChecked: false }); });
+  const closed = new Promise((r) => app.once('close', r));
+  await app.evaluate(({ app: a }) => a.quit());
+  await Promise.race([closed, sleep(10000)]);
+  const gone = await waitFor(() => !alive(sess.pid), 6000);
+  check('Confirming the quit ends the app and its child process', gone, `pid ${sess.pid}`);
+}
+
 const started = Date.now();
 try {
   const only = process.env.OBSIDIAN_E2E_ONLY; // core | failures | claude
   if (!only || only === 'core') await suiteCore();
   if (!only || only === 'failures') await suiteFailures();
+  if (!only || only === 'gallery') await suiteGallery();
+  if (!only || only === 'lifecycle') await suiteLifecycle();
   if ((!only || only === 'claude') && process.env.OBSIDIAN_E2E_CLAUDE !== '0') await suiteClaude();
 } catch (e) {
   check('suite crashed', false, e.stack ?? e);

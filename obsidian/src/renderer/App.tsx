@@ -144,6 +144,12 @@ export function App() {
   const settings = useStore((s) => s.settings);
   const [leftW, setLeftW] = useState<number | null>(null);
   const [rightW, setRightW] = useState<number | null>(null);
+  const [winW, setWinW] = useState(window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setWinW(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useIpcWiring();
   useShortcuts();
@@ -160,8 +166,17 @@ export function App() {
       </div>
     );
   }
-  const lw = leftW ?? settings.leftWidth;
-  const rw = rightW ?? settings.rightWidth;
+  // Side panels yield to the terminal on small windows: shrink proportionally to their minimums.
+  const wantL = settings.leftOpen ? (leftW ?? settings.leftWidth) : 0;
+  const wantR = settings.rightOpen ? (rightW ?? settings.rightWidth) : 0;
+  const room = Math.max(0, winW - 80 - 460); // chassis rail + margins, terminal minimum
+  const over = wantL + wantR - room;
+  let lw = wantL;
+  let rw = wantR;
+  if (over > 0 && wantL + wantR > 0) {
+    lw = Math.max(settings.leftOpen ? 200 : 0, Math.round(wantL - (over * wantL) / (wantL + wantR)));
+    rw = Math.max(settings.rightOpen ? 260 : 0, Math.round(wantR - (over * wantR) / (wantL + wantR)));
+  }
 
   return (
     <div className="chassis mat-brushed">

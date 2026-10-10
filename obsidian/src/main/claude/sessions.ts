@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
 import path from 'node:path';
 import * as pty from 'node-pty';
 import type { ClaudeInfo, LiveAgent, Project, SessionInfo, SessionSpec, TranscriptInsight } from '../../shared/types';
@@ -11,6 +12,39 @@ const FLUSH_BYTES = 64 * 1024;
 const HIGH_WATER = 1024 * 1024;
 const LOW_WATER = 256 * 1024;
 const KILL_GRACE_MS = 3000;
+
+let helperChecked = false;
+
+/**
+ * node-pty spawns through a small `spawn-helper` binary on macOS. Its prebuilds ship without the
+ * executable bit, which makes every spawn fail with "posix_spawnp failed". Repair it once, or
+ * explain exactly what to run.
+ */
+export function ensureSpawnHelper(): void {
+  if (helperChecked || process.platform === 'win32') return;
+  let base: string;
+  try {
+    base = path.dirname(require.resolve('node-pty/package.json')).replace('app.asar', 'app.asar.unpacked');
+  } catch {
+    return;
+  }
+  const candidates = [path.join(base, 'prebuilds', `${process.platform}-${process.arch}`, 'spawn-helper'), path.join(base, 'build', 'Release', 'spawn-helper')];
+  for (const file of candidates) {
+    let mode: number;
+    try {
+      mode = fs.statSync(file).mode;
+    } catch {
+      continue;
+    }
+    if ((mode & 0o111) === 0o111) continue;
+    try {
+      fs.chmodSync(file, mode | 0o755);
+    } catch {
+      throw new Error(`The terminal helper is not executable. Run: chmod +x "${file}"`);
+    }
+  }
+  helperChecked = true;
+}
 
 interface Live {
   info: SessionInfo;
@@ -111,6 +145,7 @@ export class SessionManager {
         args = ['-l'];
       }
       info.commandLine = displayCommand(file, args);
+      ensureSpawnHelper();
       const proc = pty.spawn(file, args, {
         name: 'xterm-256color',
         cols: spec.cols,

@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:e2e": "node test/e2e/run.mjs",
     "package:mac": "npm run build && electron-builder --mac --arm64",
-    "package:dir": "npm run build && electron-builder --dir"
+    "package:dir": "npm run build && electron-builder --dir",
+    "postinstall": "node scripts/postinstall.mjs"
   },
   "dependencies": {
     "node-pty": "1.1.0"

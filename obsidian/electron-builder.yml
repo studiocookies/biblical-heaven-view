@@ -1,0 +1,33 @@
+appId: app.obsidian.claude-cockpit
+productName: OBSIDIAN
+copyright: OBSIDIAN
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - package.json
+  - "!**/*.map"
+# node-pty's native module and spawn-helper must live outside the asar archive.
+asarUnpack:
+  - node_modules/node-pty/**
+# node-pty 1.1 ships N-API prebuilds (darwin-arm64 included): no Electron rebuild, no Xcode needed.
+npmRebuild: false
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.png
+  target:
+    - target: dmg
+      arch: [arm64]
+    - target: zip
+      arch: [arm64]
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  minimumSystemVersion: "12.0"
+dmg:
+  title: OBSIDIAN
+linux:
+  target: [dir]
+  category: Development
