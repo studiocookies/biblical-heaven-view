@@ -1,26 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { DEFAULT_SHORTCUTS } from '../shared/defaults';
 import type { Project, SessionRecord, Settings, Task } from '../shared/types';
 
-export const DEFAULT_SHORTCUTS: Record<string, string> = {
-  'session.newClaude': 'Mod+T',
-  'session.newShell': 'Mod+Shift+T',
-  'session.close': 'Mod+W',
-  'session.next': 'Mod+Shift+]',
-  'session.prev': 'Mod+Shift+[',
-  'palette.open': 'Mod+Shift+P',
-  'file.quickOpen': 'Mod+P',
-  'project.open': 'Mod+O',
-  'view.toggleLeft': 'Mod+B',
-  'view.toggleRight': 'Mod+Alt+B',
-  'view.toggleBottom': 'Mod+J',
-  'view.settings': 'Mod+,',
-  'view.home': 'Mod+Shift+H',
-  'terminal.clear': 'Mod+K',
-  'terminal.find': 'Mod+F',
-  'terminal.zoomIn': 'Mod+=',
-  'terminal.zoomOut': 'Mod+-',
-};
+export { DEFAULT_SHORTCUTS };
 
 export const DEFAULT_SETTINGS: Settings = {
   claudePath: null,

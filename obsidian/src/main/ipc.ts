@@ -46,16 +46,19 @@ export function registerIpc(ctx: Context): Services {
     return p;
   };
 
-  const upsertRecord = (info: SessionInfo, title?: string | null) => {
+  /**
+   * Remembers which Claude conversations were started here. Deliberately stores no conversation
+   * content: titles derived from transcripts (or passed in from history) are never persisted.
+   */
+  const upsertRecord = (info: SessionInfo) => {
     if (!info.claudeSessionId) return;
     const records = store.get('sessions').slice();
     const i = records.findIndex((r) => r.claudeSessionId === info.claudeSessionId);
     const now = Date.now();
+    const title = info.mode === 'new' ? info.title : 'Claude Code';
     const base: SessionRecord =
-      i >= 0
-        ? records[i]
-        : { claudeSessionId: info.claudeSessionId, projectId: info.projectId, title: info.title, createdAt: now, lastActiveAt: now, requestedModel: info.requestedModel };
-    const next = { ...base, lastActiveAt: now, title: title || base.title };
+      i >= 0 ? records[i] : { claudeSessionId: info.claudeSessionId, projectId: info.projectId, title, createdAt: now, lastActiveAt: now, requestedModel: info.requestedModel };
+    const next = { ...base, lastActiveAt: now };
     if (i >= 0) records[i] = next;
     else records.unshift(next);
     store.set('sessions', records.sort((a, b) => b.lastActiveAt - a.lastActiveAt).slice(0, 300));
@@ -69,11 +72,10 @@ export function registerIpc(ctx: Context): Services {
       insight: (ins) => {
         send('session:insight', ins);
         const info = sessions.get(ins.sessionId);
-        const title = sessions.transcriptTitle(ins.sessionId);
         const last = recordTouch.get(ins.sessionId) ?? 0;
         if (info && Date.now() - last > 30000) {
           recordTouch.set(ins.sessionId, Date.now());
-          upsertRecord(info, title);
+          upsertRecord(info);
         }
       },
       claudeSessionKnown: (info) => upsertRecord(info),

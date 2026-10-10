@@ -117,7 +117,11 @@ export async function detectClaude(configuredPath: string | null, force = false)
       info.path = configuredPath;
       info.source = 'settings';
     } else {
-      info.error = `Configured executable is missing or not executable: ${configuredPath}`;
+      // An explicit choice is never silently replaced by a different binary.
+      info.error = `The Claude Code executable set in Settings is missing or not executable: ${configuredPath}`;
+      info.auth = { state: 'unknown', reason: 'Claude Code not found' };
+      cached = info;
+      return info;
     }
   }
   if (!info.path) {

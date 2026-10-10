@@ -275,10 +275,6 @@ export class SessionManager {
     };
   }
 
-  transcriptTitle(id: string): string | null {
-    return this.sessions.get(id)?.tail?.state.title ?? null;
-  }
-
   private ensureTranscriptPolling() {
     if (this.transcriptTimer) return;
     this.transcriptTimer = setInterval(() => this.pollTranscripts(), 1500);

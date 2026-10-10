@@ -55,3 +55,17 @@ describe('agents', () => {
     expect(parseAgentFile(md)).toEqual({ name: 'reviewer', description: 'Reviews code', model: 'sonnet' });
   });
 });
+
+describe('child environment', async () => {
+  const { childEnv } = await import('../../src/main/env');
+  it('strips parent-session markers but keeps user configuration', () => {
+    process.env.CLAUDE_CODE_CHILD_SESSION = '1';
+    process.env.CLAUDECODE = '1';
+    process.env.CLAUDE_CONFIG_DIR = '/Users/me/.claude-work';
+    const env = childEnv();
+    expect(env.CLAUDE_CODE_CHILD_SESSION).toBeUndefined();
+    expect(env.CLAUDECODE).toBeUndefined();
+    expect(env.CLAUDE_CONFIG_DIR).toBe('/Users/me/.claude-work');
+    expect(env.PATH).toContain('/usr/local/bin');
+  });
+});

@@ -59,7 +59,24 @@ export function mergedPath(): string {
   return [...new Set(parts.filter(Boolean))].join(':');
 }
 
-const STRIP = ['ELECTRON_RUN_AS_NODE', 'ELECTRON_NO_ATTACH_CONSOLE', 'CLAUDECODE', 'CLAUDE_CODE_ENTRYPOINT', 'OBSIDIAN_RESOLVING_ENV'];
+/*
+ * Removed from child environments: Electron internals, and markers that identify a *parent*
+ * Claude Code session (present when OBSIDIAN itself was launched from inside one). Left in, they
+ * make every OBSIDIAN session behave as a nested child — e.g. transcript saving is turned off.
+ * User configuration (CLAUDE_CONFIG_DIR, provider/model settings, …) is never touched.
+ */
+export const STRIPPED_ENV = [
+  'ELECTRON_RUN_AS_NODE',
+  'ELECTRON_NO_ATTACH_CONSOLE',
+  'OBSIDIAN_RESOLVING_ENV',
+  'CLAUDECODE',
+  'CLAUDE_CODE_ENTRYPOINT',
+  'CLAUDE_CODE_CHILD_SESSION',
+  'CLAUDE_CODE_SESSION_ID',
+  'CLAUDE_PID',
+  'CLAUDE_CODE_SSE_PORT',
+];
+const STRIP = STRIPPED_ENV;
 
 /** Environment for child processes. Inherits the user's environment (needed for auth/keychain). */
 export function childEnv(extra: Record<string, string> = {}): Record<string, string> {
