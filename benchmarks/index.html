@@ -99,12 +99,18 @@ body.poweroff::before { opacity: .12; animation: none; }
 .screen {
   position: relative;
   aspect-ratio: 4 / 3;
-  border-radius: 3.4% / 4.4%;
+  --gx: 0;
+  --gy: 0;
+  border-radius: 7% / 9%;
   overflow: hidden;
-  background: radial-gradient(ellipse at center, var(--ph-bg), #000 88%);
-  box-shadow: 0 0 0 2px #000;
+  background: radial-gradient(ellipse at center, var(--ph-bg), #000 80%);
+  box-shadow: 0 0 0 2px #000, 0 0 0 4px rgba(255, 255, 255, .05), 0 0 26px rgba(var(--ph-rgb), .08);
   container-type: inline-size;
 }
+.screen.point { cursor: pointer; }
+.warp { position: absolute; inset: 0; }
+.warp.bent { filter: url(#barrel); }
+.warp.bent, .warp.bent * { cursor: inherit !important; }
 @media (max-width: 640px) { .screen { aspect-ratio: 3 / 4; } }
 @media (max-width: 640px) and (orientation: landscape) { .screen { aspect-ratio: 4 / 3; } }
 
@@ -195,7 +201,7 @@ body.poweroff::before { opacity: .12; animation: none; }
   cursor: pointer;
   letter-spacing: .03em;
 }
-.tuner button:hover { background: rgba(var(--ph-rgb), .16); }
+.tuner button.hov { background: rgba(var(--ph-rgb), .16); }
 .tuner button[aria-selected="true"] {
   background: var(--ph);
   color: var(--ph-bg);
@@ -234,7 +240,7 @@ body.poweroff::before { opacity: .12; animation: none; }
   padding: .04em .3em;
   white-space: pre;
 }
-.bar-row:not(.axis):hover { background: rgba(var(--ph-rgb), .14); }
+.bar-row.hov:not(.axis) { background: rgba(var(--ph-rgb), .14); }
 .bar { min-width: 0; overflow: hidden; }
 .bar i { font-style: normal; opacity: .1; }
 .axis .bar { position: relative; height: 1.15em; opacity: .55; border-top: 1px dotted rgba(var(--ph-rgb), .6); }
@@ -276,13 +282,13 @@ thead button {
   text-decoration: underline dotted rgba(var(--ph-rgb), .5);
   text-underline-offset: .2em;
 }
-thead button:hover { text-decoration-style: solid; }
+thead button.hov { text-decoration-style: solid; }
 td.cell { background: rgba(var(--ph-rgb), var(--a)); animation: cell-on .5s both; animation-delay: var(--d); }
 td.inv { color: var(--ph-bg); text-shadow: none; }
 td.top { box-shadow: inset 0 0 0 2px var(--ph); }
 td.top span::before { content: "►"; animation: blink .8s steps(1) infinite; }
 td.xcol, th.xcol { outline: 1px solid rgba(var(--ph-rgb), .35); outline-offset: -1px; }
-tbody tr:hover th, tbody tr:hover td:not(.cell) { background: rgba(var(--ph-rgb), .12); }
+tbody tr.hov th, tbody tr.hov td:not(.cell) { background: rgba(var(--ph-rgb), .12); }
 .wins { letter-spacing: .1em; text-align: left; }
 @keyframes cell-on {
   0% { opacity: 0; filter: brightness(3); }
@@ -324,12 +330,47 @@ tbody tr:hover th, tbody tr:hover td:not(.cell) { background: rgba(var(--ph-rgb)
 @keyframes roll { to { transform: translateY(640%); } }
 .glass {
   border-radius: inherit;
+  overflow: hidden;
   background:
-    radial-gradient(ellipse 75% 70% at 50% 50%, transparent 58%, rgba(0, 0, 0, .6) 100%),
-    linear-gradient(122deg, rgba(255, 255, 255, .085) 0%, rgba(255, 255, 255, .02) 26%, transparent 27%),
-    radial-gradient(ellipse 30% 14% at 22% 10%, rgba(255, 255, 255, .06), transparent 70%);
-  box-shadow: inset 0 0 7cqi rgba(0, 0, 0, .85), inset 0 0 1.2cqi rgba(0, 0, 0, .9);
+    radial-gradient(ellipse 118% 96% at 50% 46%, transparent 50%, rgba(0, 0, 0, .28) 74%, rgba(0, 0, 0, .9) 100%),
+    radial-gradient(ellipse 64% 42% at calc(34% - var(--gx) * 5%) calc(16% - var(--gy) * 5%), rgba(255, 255, 255, .12), rgba(255, 255, 255, .035) 46%, transparent 72%),
+    radial-gradient(circle at calc(50% - var(--gx) * 8%) calc(50% - var(--gy) * 8%), rgba(255, 255, 255, .025), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, .04), transparent 38%, rgba(0, 0, 0, .22));
+  box-shadow:
+    inset 0 2.4cqi 3cqi -1.2cqi rgba(0, 0, 0, .8),
+    inset 0 0 6cqi rgba(0, 0, 0, .75),
+    inset 0 0 1.2cqi rgba(0, 0, 0, .9),
+    inset 0 0 0 1px rgba(255, 255, 255, .07);
 }
+/* the bright crescent where the dome of glass catches the room light */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 1.6% 2.4% auto 2.4%;
+  height: 70%;
+  border-radius: 50% / 42%;
+  box-shadow: inset 0 1.5cqi 1.4cqi -1.1cqi rgba(255, 255, 255, .26), inset 1.2cqi 0 1.6cqi -1.3cqi rgba(255, 255, 255, .1);
+  -webkit-mask-image: linear-gradient(105deg, #000 15%, rgba(0, 0, 0, .5) 45%, transparent 78%);
+  mask-image: linear-gradient(105deg, #000 15%, rgba(0, 0, 0, .5) 45%, transparent 78%);
+  transform: translate(calc(var(--gx) * -1.2%), calc(var(--gy) * -1%));
+}
+/* a window across the room, bent across the curve */
+.glass::after {
+  content: "";
+  position: absolute;
+  top: 7%; right: 9%;
+  width: 24%; height: 36%;
+  border-radius: 40% 30% 34% 44% / 30% 26% 40% 36%;
+  --pane: linear-gradient(160deg, rgba(220, 230, 255, .085), rgba(220, 230, 255, .022));
+  background:
+    var(--pane) 0 0 / 46% 44% no-repeat,
+    var(--pane) 100% 0 / 46% 44% no-repeat,
+    var(--pane) 0 100% / 46% 50% no-repeat,
+    var(--pane) 100% 100% / 46% 50% no-repeat;
+  filter: blur(4px);
+  transform: perspective(500px) rotateY(-24deg) rotateX(8deg) rotate(-5deg) translate(calc(var(--gx) * -16px), calc(var(--gy) * -12px));
+}
+body.poweroff .glass::after { filter: blur(3px) brightness(1.8); }
 .osd {
   position: absolute;
   top: 4.4cqi;
@@ -488,11 +529,19 @@ kbd { font-family: inherit; border: 1px solid rgba(42, 36, 28, .5); border-radiu
 </head>
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <filter id="barrel" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feImage id="barrel-map" x="0" y="0" width="100" height="100" preserveAspectRatio="none" result="map"></feImage>
+    <feDisplacementMap in="SourceGraphic" in2="map" id="barrel-disp" scale="0" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+  </filter>
+</svg>
+
 <main class="room">
   <div class="monitor">
     <div class="case">
       <div class="bezel">
         <div class="screen" id="screen">
+          <div class="warp" id="warp">
           <div class="tube on" id="tube">
             <div class="content" id="content">
               <header class="hud">
@@ -511,6 +560,7 @@ kbd { font-family: inherit; border: 1px solid rgba(42, 36, 28, .5); border-radiu
             <div class="fx scan" aria-hidden="true"></div>
             <div class="fx roll" aria-hidden="true"></div>
             <div class="osd" id="osd" aria-hidden="true"><b id="osd-ch">CH 00</b><small id="osd-name"></small></div>
+          </div>
           </div>
           <div class="afterglow" id="afterglow" aria-hidden="true"></div>
           <div class="fx glass" aria-hidden="true"></div>
@@ -881,14 +931,6 @@ kbd { font-family: inherit; border: 1px solid rgba(42, 36, 28, .5); border-radiu
       <div class="src">SRC per cell on hover · ties share the win (SWE-V)</div>`;
 
     view.querySelectorAll("thead button").forEach(btn => btn.addEventListener("click", () => tune(+btn.dataset.ch)));
-    const table = view.querySelector("#matrix");
-    table.addEventListener("mouseover", (e) => {
-      const c = e.target.closest("td, th");
-      if (!c) return;
-      table.querySelectorAll(".xcol").forEach(x => x.classList.remove("xcol"));
-      if (c.cellIndex > 0 && c.cellIndex <= BENCHES.length) table.querySelectorAll("tr").forEach(tr => tr.cells[c.cellIndex].classList.add("xcol"));
-    });
-    table.addEventListener("mouseleave", () => table.querySelectorAll(".xcol").forEach(x => x.classList.remove("xcol")));
     if (!reduce) view.querySelectorAll("[data-final]").forEach((el, i) => scramble(el, el.dataset.final, 350 + i * 28));
   }
 
@@ -1059,6 +1101,93 @@ kbd { font-family: inherit; border: 1px solid rgba(42, 36, 28, .5); border-radiu
   }
   $("#power").addEventListener("click", () => setPower(!powered));
 
+  // ---------------- curved glass ----------------
+  // Output pixel (u,v) in -1..1 shows the picture from src(u,v): edges bow out, the middle swells.
+  const K = 0.065, M = 0.045;
+  const srcOf = (u, v) => { const g = 1 - M + M * (u * u + v * v); return [u * (1 + K * v * v) * g, v * (1 + K * u * u) * g]; };
+  const screenEl = $("#screen"), warp = $("#warp");
+  const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+  const bent = !isSafari && !!window.CSS && CSS.supports("filter", "url(#barrel)");
+  const mapCvs = document.createElement("canvas");
+  function buildWarp() {
+    if (!bent) return;
+    const W = warp.clientWidth, H = warp.clientHeight;
+    if (!W || !H) return;
+    const MW = 192, MH = Math.round(MW * H / W);
+    mapCvs.width = MW; mapCvs.height = MH;
+    const mx = mapCvs.getContext("2d"), id = mx.createImageData(MW, MH);
+    const dx = new Float32Array(MW * MH), dy = new Float32Array(MW * MH);
+    let max = 0;
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+      const u = (x + 0.5) / MW * 2 - 1, v = (y + 0.5) / MH * 2 - 1, [su, sv] = srcOf(u, v), i = y * MW + x;
+      dx[i] = (su - u) * W / 2; dy[i] = (sv - v) * H / 2;
+      max = Math.max(max, Math.abs(dx[i]), Math.abs(dy[i]));
+    }
+    const S = max * 2.02;
+    for (let i = 0; i < dx.length; i++) {
+      id.data[i * 4] = Math.round(127.5 + dx[i] / S * 255);
+      id.data[i * 4 + 1] = Math.round(127.5 + dy[i] / S * 255);
+      id.data[i * 4 + 2] = 128; id.data[i * 4 + 3] = 255;
+    }
+    mx.putImageData(id, 0, 0);
+    const fe = $("#barrel-map");
+    fe.setAttribute("width", W); fe.setAttribute("height", H);
+    fe.setAttribute("href", mapCvs.toDataURL());
+    fe.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", mapCvs.toDataURL());
+    $("#barrel-disp").setAttribute("scale", S.toFixed(2));
+    warp.classList.add("bent");
+  }
+  // where a point on the bent glass really lands in the page layout
+  function mapPoint(x, y) {
+    if (!bent) return [x, y];
+    const r = warp.getBoundingClientRect();
+    const [su, sv] = srcOf((x - r.left) / r.width * 2 - 1, (y - r.top) / r.height * 2 - 1);
+    return [r.left + (su + 1) / 2 * r.width, r.top + (sv + 1) / 2 * r.height];
+  }
+  const hitAt = (x, y) => { const [sx, sy] = mapPoint(x, y); const el = document.elementFromPoint(sx, sy); return el && warp.contains(el) ? el : null; };
+  screenEl.addEventListener("click", (e) => {
+    if (!bent || e.detail === 0) return;
+    const hit = hitAt(e.clientX, e.clientY);
+    const want = hit && hit.closest("button"), got = e.target.closest && e.target.closest("button");
+    if (want === got) return;
+    e.preventDefault(); e.stopPropagation();
+    if (want) want.click();
+    else if (booting && hit && view.contains(hit)) view.click();
+  }, true);
+  let hovEls = [];
+  function hover(x, y) {
+    const hit = x == null ? null : hitAt(x, y);
+    const next = hit ? [hit.closest(".tuner button, thead button"), hit.closest(".bar-row"), hit.closest("tbody tr")].filter(Boolean) : [];
+    hovEls.forEach(el => { if (!next.includes(el)) el.classList.remove("hov"); });
+    next.forEach(el => el.classList.add("hov"));
+    hovEls = next;
+    screenEl.classList.toggle("point", !!(hit && hit.closest("button")));
+    const table = view.querySelector("#matrix");
+    if (table) {
+      table.querySelectorAll(".xcol").forEach(c => c.classList.remove("xcol"));
+      const c = hit && hit.closest("#matrix td, #matrix th");
+      if (c && c.cellIndex > 0 && c.cellIndex <= BENCHES.length) table.querySelectorAll("tr").forEach(tr => tr.cells[c.cellIndex].classList.add("xcol"));
+    }
+  }
+  screenEl.addEventListener("pointermove", (e) => hover(e.clientX, e.clientY));
+  screenEl.addEventListener("pointerleave", () => hover(null));
+
+  // reflections slide across the dome as you move, and drift on their own when you don't
+  let gx = 0, gy = 0, tx = 0, ty = 0, lastMove = -1e9;
+  window.addEventListener("pointermove", (e) => {
+    const r = screenEl.getBoundingClientRect();
+    tx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 1.4)));
+    ty = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 1.4)));
+    lastMove = performance.now();
+  });
+  (function glint(now) {
+    requestAnimationFrame(glint);
+    if (!reduce && now - lastMove > 2500) { tx = Math.sin(now / 5200) * 0.6; ty = Math.cos(now / 7300) * 0.4; }
+    gx += (tx - gx) * 0.06; gy += (ty - gy) * 0.06;
+    screenEl.style.setProperty("--gx", gx.toFixed(3));
+    screenEl.style.setProperty("--gy", gy.toFixed(3));
+  })(0);
+
   document.addEventListener("keydown", (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === "ArrowRight") { tune(ch + 1); e.preventDefault(); }
@@ -1069,7 +1198,7 @@ kbd { font-family: inherit; border: 1px solid rgba(42, 36, 28, .5); border-radiu
   });
 
   // keep bars to scale when the tube resizes
-  new ResizeObserver(() => { if (ch !== 0 && !booting && powered) layoutBars(); }).observe($("#screen"));
+  new ResizeObserver(() => { buildWarp(); if (ch !== 0 && !booting && powered) layoutBars(); }).observe($("#screen"));
 
   applyPhosphor(false);
   buildTicker();
