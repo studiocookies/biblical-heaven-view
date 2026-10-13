@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cathode Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Special+Elite&family=VT323&display=swap">
+<style>
+/* Layout: one boxy beige CRT on a dark desk; every score lives on the glass, the source note is taped below. */
+:root {
+  color-scheme: dark;
+  --room: #0f0c0b;
+  --room-hi: #211915;
+  --plastic: #d6ccb4;
+  --plastic-hi: #ece4d0;
+  --plastic-lo: #b1a68b;
+  --plastic-dk: #786e58;
+  --bezel: #24211c;
+  --ph: #ffb000;
+  --ph-rgb: 255, 176, 0;
+  --ph-bg: #0d0700;
+  --paper: #ebe3cd;
+  --ink: #2a241c;
+  --led: #63ff6e;
+  --f-screen: "VT323", "Lucida Console", "Courier New", monospace;
+  --f-badge: "Michroma", "Arial Narrow", Arial, sans-serif;
+  --f-note: "Special Elite", "Courier New", monospace;
+}
+:root[data-phosphor="green"] { --ph: #45ff72; --ph-rgb: 69, 255, 114; --ph-bg: #010b03; }
+:root[data-phosphor="ice"] { --ph: #d2e8ff; --ph-rgb: 210, 232, 255; --ph-bg: #03070d; }
+
+html, body { min-height: 100%; }
+body {
+  background: var(--room);
+  color: var(--plastic);
+  font-family: var(--f-screen);
+  overflow-x: hidden;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 42% at 50% 36%, rgba(var(--ph-rgb), .17), transparent 72%),
+    radial-gradient(ellipse 90% 50% at 50% 115%, var(--room-hi), transparent 70%);
+  animation: wall 5s infinite;
+  transition: opacity .6s;
+}
+body.poweroff::before { opacity: .12; animation: none; }
+@keyframes wall {
+  0%, 100% { opacity: 1; } 47% { opacity: .9; } 48% { opacity: 1; } 71% { opacity: .94; } 72% { opacity: .82; } 73% { opacity: 1; }
+}
+
+.room {
+  position: relative;
+  padding-inline: 16px;
+  padding-block: 28px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 34px;
+}
+
+/* ---------- the monitor body ---------- */
+.monitor { width: min(100%, 1040px); display: flex; flex-direction: column; align-items: center; }
+.case {
+  position: relative;
+  width: 100%;
+  border-radius: 24px 24px 16px 16px;
+  padding: clamp(16px, 3.4vw, 40px) clamp(12px, 3.4vw, 40px) clamp(10px, 1.6vw, 18px);
+  background:
+    linear-gradient(180deg, var(--plastic-hi), var(--plastic) 28%, var(--plastic-lo));
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, .65),
+    inset 0 -8px 14px rgba(0, 0, 0, .2),
+    inset 6px 0 10px rgba(255, 255, 255, .18),
+    inset -6px 0 12px rgba(0, 0, 0, .14),
+    0 0 0 1px var(--plastic-dk),
+    0 40px 70px rgba(0, 0, 0, .65);
+}
+.case::before {
+  content: "";
+  position: absolute;
+  top: 7px; left: 32%; right: 32%;
+  height: 7px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, var(--plastic-dk) 0 9px, transparent 9px 15px);
+  opacity: .5;
+}
+.bezel {
+  border-radius: 18px;
+  padding: clamp(8px, 2vw, 22px);
+  background: linear-gradient(145deg, #3b362e, var(--bezel) 40%, #13110e);
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, .75), 0 1px 0 rgba(255, 255, 255, .55);
+}
+.screen {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 3.4% / 4.4%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, var(--ph-bg), #000 88%);
+  box-shadow: 0 0 0 2px #000;
+  container-type: inline-size;
+}
+@media (max-width: 640px) { .screen { aspect-ratio: 3 / 4; } }
+@media (max-width: 640px) and (orientation: landscape) { .screen { aspect-ratio: 4 / 3; } }
+
+.tube { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.tube.on { animation: crt-on .75s cubic-bezier(.2, .7, .2, 1) both; }
+.tube.off { animation: crt-off .42s cubic-bezier(.6, 0, .9, .5) forwards; }
+.tube.dead { transform: scale(0, .003); opacity: 0; }
+@keyframes crt-on {
+  0% { transform: scale(0, .004); filter: brightness(5); opacity: 1; }
+  35% { transform: scale(1, .004); filter: brightness(5); }
+  65% { transform: scale(1, 1.04); filter: brightness(1.8); }
+  100% { transform: none; filter: none; }
+}
+@keyframes crt-off {
+  0% { transform: none; filter: none; opacity: 1; }
+  55% { transform: scale(1, .004); filter: brightness(6); opacity: 1; }
+  100% { transform: scale(0, .004); filter: brightness(8); opacity: 0; }
+}
+.tube.degauss { animation: degauss 1.15s ease-out; }
+@keyframes degauss {
+  0% { transform: none; filter: none; }
+  8% { transform: skewX(4deg) scale(1.03); filter: hue-rotate(90deg) saturate(5) blur(1px); }
+  20% { transform: skewX(-3deg) rotate(.6deg); filter: hue-rotate(200deg) saturate(5); }
+  35% { transform: skewX(2deg) scale(.99); filter: hue-rotate(300deg) saturate(3); }
+  55% { transform: skewX(-1deg); filter: hue-rotate(60deg) saturate(2); }
+  75% { transform: skewX(.4deg); filter: hue-rotate(20deg); }
+  100% { transform: none; filter: none; }
+}
+.tube.vhold .content { animation: vhold .7s steps(7); }
+@keyframes vhold {
+  0% { transform: translateY(0); } 25% { transform: translateY(-22%); } 50% { transform: translateY(14%); }
+  75% { transform: translateY(-5%); } 100% { transform: translateY(0); }
+}
+
+/* ---------- what's drawn on the glass ---------- */
+.content {
+  position: absolute;
+  inset: 0;
+  padding: 4.6cqi 5.2cqi 4cqi;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 1.5cqi;
+  color: var(--ph);
+  font-size: clamp(14px, 2.2cqi, 25px);
+  line-height: 1.12;
+  text-shadow:
+    0 0 2px rgba(var(--ph-rgb), .9),
+    0 0 12px rgba(var(--ph-rgb), .45),
+    -.7px 0 rgba(255, 40, 70, .38),
+    .7px 0 rgba(40, 170, 255, .38);
+  animation: flicker 3.3s infinite;
+}
+@keyframes flicker {
+  0%, 100% { opacity: 1; } 8% { opacity: .95; } 9% { opacity: 1; } 31% { opacity: .97; }
+  52% { opacity: .92; } 53% { opacity: 1; } 77% { opacity: .96; } 78% { opacity: .88; } 79% { opacity: 1; }
+}
+.content.tuning #view { opacity: 0; }
+.content.tuning { animation: jitter .26s steps(3); }
+.content.glitch { animation: jitter .22s steps(4); }
+@keyframes jitter {
+  0% { transform: translate(0, 0) skewX(0); }
+  33% { transform: translate(-1.4%, .6%) skewX(6deg); }
+  66% { transform: translate(1.1%, -.4%) skewX(-4deg); }
+  100% { transform: none; }
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .2em 1em;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.hud .brand::after { content: "▌"; margin-left: .15em; animation: blink 1s steps(1) infinite; }
+.dim { opacity: .62; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.tuner { display: flex; flex-wrap: wrap; gap: .35em; }
+.tuner button {
+  font: inherit;
+  color: inherit;
+  text-shadow: inherit;
+  background: transparent;
+  border: 1px solid rgba(var(--ph-rgb), .45);
+  padding: .02em .42em;
+  cursor: pointer;
+  letter-spacing: .03em;
+}
+.tuner button:hover { background: rgba(var(--ph-rgb), .16); }
+.tuner button[aria-selected="true"] {
+  background: var(--ph);
+  color: var(--ph-bg);
+  text-shadow: none;
+  box-shadow: 0 0 14px rgba(var(--ph-rgb), .65);
+}
+.content button:focus-visible { outline: 2px dashed var(--ph); outline-offset: 2px; }
+
+#view {
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--ph-rgb), .6) transparent;
+  transition: opacity .08s;
+}
+.boot div { white-space: pre-wrap; }
+
+.eyebrow { letter-spacing: .06em; opacity: .7; text-transform: uppercase; }
+.bh h2 {
+  margin: .05em 0 0;
+  font-weight: 400;
+  font-size: 2.3em;
+  line-height: .95;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  text-wrap: balance;
+}
+.bh p { margin: .2em 0 0; opacity: .8; max-width: 62ch; }
+
+.bars { display: grid; gap: .28em; margin-top: .9em; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 24ch minmax(0, 1fr) 7ch;
+  gap: .7em;
+  align-items: baseline;
+  padding: .04em .3em;
+  white-space: pre;
+}
+.bar-row:not(.axis):hover { background: rgba(var(--ph-rgb), .14); }
+.bar { min-width: 0; overflow: hidden; }
+.bar i { font-style: normal; opacity: .1; }
+.axis .bar { position: relative; height: 1.15em; opacity: .55; border-top: 1px dotted rgba(var(--ph-rgb), .6); }
+.axis .bar span { position: absolute; top: .1em; transform: translateX(-50%); }
+.axis .bar span:first-child { transform: none; }
+.axis .bar span:last-child { transform: translateX(-100%); }
+.who { overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
+.lab { opacity: .5; font-size: .85em; }
+.score { text-align: right; font-variant-numeric: tabular-nums; }
+.lead .mk { animation: blink .7s steps(1) infinite; }
+.lead .score::after { content: "◄"; margin-left: .15em; animation: blink .7s steps(1) infinite; }
+.lead .score { margin-right: -1.1ch; }
+.nosig { opacity: .5; }
+.axis { opacity: .9; }
+.src { margin-top: .9em; opacity: .55; font-size: .9em; }
+
+@container (max-width: 560px) {
+  .bar-row { grid-template-columns: minmax(0, 1fr) 7ch; gap: 0 .6em; padding-block: .1em; }
+  .bar-row .bar { grid-column: 1 / -1; grid-row: 2; }
+  .bar-row.axis .who, .bar-row.axis .score { display: none; }
+  .bar-row.axis .bar { grid-row: 1; }
+  .bh h2 { font-size: 1.9em; }
+}
+
+.tablewrap { overflow-x: auto; margin-top: .8em; scrollbar-width: thin; scrollbar-color: rgba(var(--ph-rgb), .6) transparent; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td {
+  padding: .14em .5em;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px dashed rgba(var(--ph-rgb), .22);
+  font-weight: 400;
+}
+th:first-child { text-align: left; text-transform: uppercase; }
+thead th { border-bottom: 1px solid rgba(var(--ph-rgb), .6); text-transform: uppercase; }
+thead button {
+  font: inherit; color: inherit; text-shadow: inherit;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline dotted rgba(var(--ph-rgb), .5);
+  text-underline-offset: .2em;
+}
+thead button:hover { text-decoration-style: solid; }
+td.cell { background: rgba(var(--ph-rgb), var(--a)); animation: cell-on .5s both; animation-delay: var(--d); }
+td.inv { color: var(--ph-bg); text-shadow: none; }
+td.top { box-shadow: inset 0 0 0 2px var(--ph); }
+td.top span::before { content: "►"; animation: blink .8s steps(1) infinite; }
+td.xcol, th.xcol { outline: 1px solid rgba(var(--ph-rgb), .35); outline-offset: -1px; }
+tbody tr:hover th, tbody tr:hover td:not(.cell) { background: rgba(var(--ph-rgb), .12); }
+.wins { letter-spacing: .1em; text-align: left; }
+@keyframes cell-on {
+  0% { opacity: 0; filter: brightness(3); }
+  60% { opacity: 1; filter: brightness(1.8); }
+  100% { opacity: 1; filter: none; }
+}
+
+.status {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1em;
+  align-items: baseline;
+  border-top: 1px solid rgba(var(--ph-rgb), .45);
+  padding-top: .35em;
+}
+.ticker { overflow: hidden; white-space: nowrap; }
+.ticker span { display: inline-block; padding-left: 100%; animation: tick 80s linear infinite; }
+@keyframes tick { to { transform: translateX(-100%); } }
+.meter { white-space: pre; font-variant-numeric: tabular-nums; }
+.rec { animation: blink 1.4s steps(1) infinite; }
+
+.probe { position: absolute; visibility: hidden; white-space: pre; pointer-events: none; }
+
+/* tube effects stacked over the picture */
+.fx { position: absolute; inset: 0; pointer-events: none; }
+#static { width: 100%; height: 100%; opacity: .08; mix-blend-mode: screen; image-rendering: pixelated; }
+.scan {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, .3) 2px 3px),
+    repeating-linear-gradient(90deg, rgba(255, 0, 40, .035) 0 1px, rgba(0, 255, 90, .025) 1px 2px, rgba(30, 90, 255, .035) 2px 3px);
+}
+.roll {
+  inset: auto 0 auto 0;
+  top: -22%;
+  height: 20%;
+  background: linear-gradient(180deg, transparent, rgba(var(--ph-rgb), .07) 45%, rgba(255, 255, 255, .04) 50%, transparent);
+  animation: roll 7.5s linear infinite;
+}
+@keyframes roll { to { transform: translateY(640%); } }
+.glass {
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse 75% 70% at 50% 50%, transparent 58%, rgba(0, 0, 0, .6) 100%),
+    linear-gradient(122deg, rgba(255, 255, 255, .085) 0%, rgba(255, 255, 255, .02) 26%, transparent 27%),
+    radial-gradient(ellipse 30% 14% at 22% 10%, rgba(255, 255, 255, .06), transparent 70%);
+  box-shadow: inset 0 0 7cqi rgba(0, 0, 0, .85), inset 0 0 1.2cqi rgba(0, 0, 0, .9);
+}
+.osd {
+  position: absolute;
+  top: 4.4cqi;
+  right: 5.4cqi;
+  text-align: right;
+  color: var(--ph);
+  font-family: var(--f-screen);
+  line-height: .9;
+  text-shadow: 0 0 3px rgba(var(--ph-rgb), 1), 0 0 18px rgba(var(--ph-rgb), .7);
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+.osd b { display: block; font-weight: 400; font-size: clamp(34px, 7.5cqi, 84px); letter-spacing: .04em; }
+.osd small { font-size: clamp(13px, 2cqi, 22px); text-transform: uppercase; letter-spacing: .08em; }
+.osd.show { opacity: 1; }
+.afterglow {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 8px; height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 12px 6px rgba(var(--ph-rgb), .9), 0 0 40px 18px rgba(var(--ph-rgb), .35);
+  opacity: 0;
+  pointer-events: none;
+}
+.afterglow.fade { animation: afterglow 1.6s ease-out forwards; }
+@keyframes afterglow { 0% { opacity: 1; transform: scale(1.4); } 100% { opacity: 0; transform: scale(.2); } }
+
+/* ---------- front panel ---------- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  padding-top: clamp(10px, 1.6vw, 18px);
+}
+.badge { display: flex; flex-direction: column; gap: 3px; color: var(--plastic-dk); text-shadow: 0 1px 0 rgba(255, 255, 255, .6); }
+.badge strong { font-family: var(--f-badge); font-weight: 400; letter-spacing: .22em; font-size: clamp(11px, 1.35vw, 15px); color: #5b5242; }
+.badge span { font-family: var(--f-badge); font-size: 9px; letter-spacing: .3em; }
+.panel { display: flex; align-items: flex-end; gap: clamp(10px, 2vw, 22px); flex-wrap: wrap; }
+.ctl { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.ctl > span {
+  font-family: var(--f-badge);
+  font-size: 8px;
+  letter-spacing: .22em;
+  color: #5d5444;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
+}
+.knob {
+  --rot: -135deg;
+  position: relative;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255, 255, 255, .06) 0 6deg, rgba(0, 0, 0, .08) 6deg 12deg),
+    radial-gradient(circle at 35% 30%, #645e52, #2a2620 70%);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, .45), inset 0 1px 1px rgba(255, 255, 255, .25), 0 0 0 3px var(--plastic-lo), 0 0 0 4px var(--plastic-dk);
+}
+.knob::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 3px; height: 16px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--plastic-hi);
+  transform-origin: 50% 0;
+  transform: rotate(calc(var(--rot) + 180deg));
+  transition: transform .35s cubic-bezier(.3, 1.6, .5, 1);
+}
+.push {
+  width: 42px; height: 22px;
+  border-radius: 4px;
+  border: 0;
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--plastic-hi), var(--plastic-lo));
+  box-shadow: 0 3px 0 var(--plastic-dk), 0 4px 6px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .7);
+  transition: transform .08s, box-shadow .08s;
+}
+.push:active, .push[aria-pressed="true"] { transform: translateY(2px); box-shadow: 0 1px 0 var(--plastic-dk), 0 2px 3px rgba(0, 0, 0, .35), inset 0 1px 2px rgba(0, 0, 0, .2); }
+.power { width: 34px; height: 34px; border-radius: 50%; }
+.led {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #2c3a2c;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .6);
+}
+.led.lit { background: var(--led); box-shadow: 0 0 6px 2px rgba(99, 255, 110, .7), inset 0 -1px 1px rgba(0, 0, 0, .3); animation: led 2.6s ease-in-out infinite; }
+.led.busy { background: #ffb347; box-shadow: 0 0 6px 2px rgba(255, 179, 71, .8); animation: blink .12s steps(1) infinite; }
+@keyframes led { 50% { opacity: .7; } }
+.grille {
+  width: 70px; height: 34px;
+  border-radius: 4px;
+  background: radial-gradient(circle, #5a5141 1.3px, transparent 1.8px) 0 0 / 6px 6px;
+  opacity: .8;
+}
+.knob:focus-visible, .push:focus-visible { outline: 2px solid #f6efe0; outline-offset: 4px; }
+.ticks { display: flex; gap: 8px; font-family: var(--f-badge); font-size: 7px; letter-spacing: .1em; color: #5d5444; }
+
+.neck {
+  width: 30%; height: 20px;
+  background: linear-gradient(180deg, #8c826b, var(--plastic-lo) 40%, var(--plastic-dk));
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+}
+.foot {
+  width: 50%; height: 18px;
+  border-radius: 6px 6px 12px 12px;
+  background: linear-gradient(180deg, var(--plastic-hi), var(--plastic-lo));
+  box-shadow: 0 22px 34px rgba(0, 0, 0, .7), inset 0 -3px 4px rgba(0, 0, 0, .2);
+}
+
+/* ---------- taped source note ---------- */
+.note {
+  position: relative;
+  width: min(100%, 660px);
+  padding: 22px clamp(16px, 4vw, 30px) 20px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(60, 90, 160, .14) 25px 26px),
+    var(--paper);
+  color: var(--ink);
+  font-family: var(--f-note);
+  font-size: 14px;
+  line-height: 26px;
+  transform: rotate(-1.1deg);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .55);
+}
+.note::before {
+  content: "";
+  position: absolute;
+  top: -12px; left: 50%;
+  width: 120px; height: 26px;
+  margin-left: -60px;
+  background: rgba(240, 232, 200, .55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+  transform: rotate(2deg);
+}
+.note h3 { margin: 0; font-size: 15px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
+.note dl { margin: 6px 0 10px; display: grid; grid-template-columns: 5.5ch 1fr; gap: 0 12px; }
+.note dt { font-weight: 700; }
+.note dd { margin: 0; min-width: 0; }
+.note a { color: var(--ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.note p { margin: 0; }
+kbd { font-family: inherit; border: 1px solid rgba(42, 36, 28, .5); border-radius: 3px; padding: 0 4px; line-height: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .content, .roll, body::before, .ticker span { animation: none !important; }
+  .ticker span { padding-left: 0; }
+  .tube.on, .tube.off, .tube.degauss { animation-duration: .01s !important; }
+}
+</style>
+</head>
+<body>
+
+<main class="room">
+  <div class="monitor">
+    <div class="case">
+      <div class="bezel">
+        <div class="screen" id="screen">
+          <div class="tube on" id="tube">
+            <div class="content" id="content">
+              <header class="hud">
+                <span class="brand">Cathode·Bench <span class="dim">/ scorefile 2026-10-13</span></span>
+                <span class="dim" id="clock">--:--:--</span>
+              </header>
+              <nav class="tuner" id="tuner" role="tablist" aria-label="Benchmark channels"></nav>
+              <section id="view" role="tabpanel" aria-label="Scores"></section>
+              <footer class="status">
+                <div class="ticker" aria-hidden="true"><span id="ticker"></span></div>
+                <div class="meter"><span id="sig">SIG ▮▮▮▮▯</span> <span class="rec">●</span></div>
+              </footer>
+              <span class="probe" id="probe" aria-hidden="true">████████████████████</span>
+            </div>
+            <canvas class="fx" id="static" aria-hidden="true"></canvas>
+            <div class="fx scan" aria-hidden="true"></div>
+            <div class="fx roll" aria-hidden="true"></div>
+            <div class="osd" id="osd" aria-hidden="true"><b id="osd-ch">CH 00</b><small id="osd-name"></small></div>
+          </div>
+          <div class="afterglow" id="afterglow" aria-hidden="true"></div>
+          <div class="fx glass" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="badge">
+          <strong>CATHODE·BENCH</strong>
+          <span>CM-1426 · MONOCHROME</span>
+        </div>
+        <div class="panel">
+          <div class="ctl">
+            <button class="knob" id="knob-ch" type="button" aria-label="Channel knob: left half tunes down, right half tunes up"></button>
+            <span>CHANNEL</span>
+          </div>
+          <div class="ctl">
+            <button class="knob" id="knob-ph" type="button" aria-label="Phosphor knob: amber, green or ice"></button>
+            <span id="ph-label">AMBER</span>
+          </div>
+          <div class="ctl">
+            <button class="push" id="degauss" type="button" aria-label="Degauss the tube"></button>
+            <span>DEGAUSS</span>
+          </div>
+          <div class="ctl">
+            <button class="push" id="sound" type="button" aria-pressed="false" aria-label="Tube sound"></button>
+            <span>SOUND</span>
+          </div>
+          <div class="grille" aria-hidden="true"></div>
+          <div class="ctl">
+            <span class="led lit" id="led" aria-hidden="true"></span>
+            <button class="push power" id="power" type="button" aria-pressed="true" aria-label="Power"></button>
+            <span>POWER</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="neck" aria-hidden="true"></div>
+    <div class="foot" aria-hidden="true"></div>
+  </div>
+
+  <aside class="note" aria-label="Score sources">
+    <h3>Scorefile 2026-10-13 · where each reading came from</h3>
+    <dl>
+      <dt>BLM</dt><dd><a href="https://benchlm.ai/benchmarks/gpqa" target="_blank" rel="noopener">BenchLM leaderboards</a>, 7–10 Oct 2026 (GPQA, ARC-AGI-2, FrontierSWE v2 mean@5)</dd>
+      <dt>VEN</dt><dd>Lab launch tables via <a href="https://llm-stats.com/blog/research/claude-opus-5-5-launch" target="_blank" rel="noopener">llm-stats</a>, <a href="https://apidog.com/blog/claude-sonnet-5-5-benchmarks/" target="_blank" rel="noopener">Apidog</a>, <a href="https://kingy.ai/blog/gpt-6-astra-vs-claude-opus-5-5/" target="_blank" rel="noopener">Kingy</a>, <a href="https://aicybr.com/blog/deepseek-v4-pro-flash-complete-guide" target="_blank" rel="noopener">aicybr</a></dd>
+      <dt>VALS</dt><dd><a href="https://www.vals.ai/benchmarks/swebench" target="_blank" rel="noopener">Vals.ai</a> runs, as listed on BenchLM</dd>
+      <dt>ARC</dt><dd>ARC Prize semi-private set, max effort, per <a href="https://benchlm.ai/benchmarks/arc-agi-2" target="_blank" rel="noopener">BenchLM</a></dd>
+      <dt>CMP</dt><dd><a href="https://gurusup.com/blog/grok-vs-chatgpt-claude-gemini" target="_blank" rel="noopener">GuruSup model comparison</a></dd>
+    </dl>
+    <p><kbd>◄</kbd> <kbd>►</kbd> change channel · <kbd>0</kbd>–<kbd>7</kbd> jump · <kbd>P</kbd> phosphor · <kbd>D</kbd> degauss · static means no reading on file</p>
+  </aside>
+</main>
+
+<script>
+(() => {
+  // ---------------- scorefile ----------------
+  const MODELS = [
+    { id: "astra",    name: "GPT-6 Astra",       lab: "OAI" },
+    { id: "opus55",   name: "Claude Opus 5.5",   lab: "ANT" },
+    { id: "fable51",  name: "Claude Fable 5.1",  lab: "ANT" },
+    { id: "sonnet55", name: "Claude Sonnet 5.5", lab: "ANT" },
+    { id: "gem31pro", name: "Gemini 3.1 Pro",    lab: "GOO" },
+    { id: "gem38fl",  name: "Gemini 3.8 Flash",  lab: "GOO" },
+    { id: "dsv4pro",  name: "DeepSeek V4 Pro",   lab: "DSK" },
+    { id: "grok4",    name: "Grok 4",            lab: "XAI" },
+  ];
+  const BENCHES = [
+    { id: "gpqa",   code: "GPQA",  name: "GPQA Diamond",        what: "Graduate-level biology, physics and chemistry questions written to defeat web search.", unit: "% correct" },
+    { id: "arc2",   code: "ARC2",  name: "ARC-AGI-2",           what: "Abstract grid puzzles. See a few examples, infer the hidden rule, draw the answer.", unit: "% solved" },
+    { id: "hle",    code: "HLE",   name: "Humanity's Last Exam", what: "Expert-written questions at the edge of human knowledge. Tools allowed.", unit: "% correct" },
+    { id: "swepro", code: "SWE-P", name: "SWE-bench Pro",       what: "Long-horizon fixes inside real, professional-grade codebases.", unit: "% resolved" },
+    { id: "swev",   code: "SWE-V", name: "SWE-bench Verified",  what: "Resolve real GitHub issues. Hidden tests decide pass or fail.", unit: "% resolved" },
+    { id: "fswe",   code: "FSWE2", name: "FrontierSWE v2",      what: "Frontier agentic coding tasks, averaged over five runs.", unit: "mean@5 %" },
+    { id: "tb4",    code: "TB4",   name: "Terminal-Bench 4.0",  what: "Agentic work in a live shell: install, build, debug, ship.", unit: "% tasks" },
+  ];
+  const SCORES = {
+    gpqa:   { astra: [96.0, "BLM"], gem38fl: [94.4, "VALS"], gem31pro: [94.3, "VEN"], dsv4pro: [90.1, "VEN"] },
+    arc2:   { astra: [95.0, "ARC"], opus55: [91.7, "BLM"], gem38fl: [89.2, "BLM"], gem31pro: [77.1, "VEN"] },
+    hle:    { opus55: [67.7, "VEN"], fable51: [65.0, "VEN"], astra: [57.2, "VEN"] },
+    swepro: { opus55: [89.9, "VEN"], sonnet55: [81.3, "VEN"] },
+    swev:   { dsv4pro: [80.6, "VEN"], gem31pro: [80.6, "VEN"], gem38fl: [80.0, "VALS"], grok4: [75.0, "CMP"] },
+    fswe:   { astra: [65.5, "BLM"], opus55: [62.3, "BLM"], sonnet55: [61.9, "BLM"] },
+    tb4:    { sonnet55: [70.6, "VEN"], opus55: [66.4, "VEN"], astra: [57.9, "VEN"] },
+  };
+  const SRC = { BLM: "BenchLM", VEN: "lab launch table", VALS: "Vals.ai", ARC: "ARC Prize", CMP: "GuruSup" };
+  const CHANNELS = [{ id: "all", code: "ALL", name: "All channels" }, ...BENCHES];
+  const readings = Object.values(SCORES).reduce((n, b) => n + Object.keys(b).length, 0);
+  const slots = MODELS.length * BENCHES.length;
+
+  const leaders = (b) => {
+    const s = SCORES[b.id];
+    const top = Math.max(...Object.values(s).map(v => v[0]));
+    return Object.keys(s).filter(k => s[k][0] === top);
+  };
+  const byId = Object.fromEntries(MODELS.map(m => [m.id, m]));
+
+  // ---------------- state & elements ----------------
+  const $ = (s) => document.querySelector(s);
+  const root = document.documentElement;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const content = $("#content"), view = $("#view"), tube = $("#tube"), tuner = $("#tuner");
+  const PHOS = [
+    { id: "amber", label: "AMBER", rgb: [255, 176, 0], rot: -50 },
+    { id: "green", label: "GREEN", rgb: [69, 255, 114], rot: 0 },
+    { id: "ice",   label: "ICE",   rgb: [210, 232, 255], rot: 50 },
+  ];
+  let ch = 0, powered = true, booting = false, phIdx = 0, bars = [], staticBoost = 0, bootTimer = null;
+
+  try { const saved = localStorage.getItem("cathode-phosphor"); const i = PHOS.findIndex(p => p.id === saved); if (i >= 0) phIdx = i; } catch (e) {}
+
+  // ---------------- sound (only after a click on SOUND) ----------------
+  const sfx = {
+    ctx: null, on: false, hum: null,
+    init() {
+      if (this.ctx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      const len = this.ctx.sampleRate * 0.6;
+      this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = this.noise.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    },
+    hiss(dur = 0.28, vol = 0.12) {
+      if (!this.on || !this.ctx) return;
+      const t = this.ctx.currentTime, src = this.ctx.createBufferSource(), g = this.ctx.createGain(), f = this.ctx.createBiquadFilter();
+      src.buffer = this.noise; f.type = "bandpass"; f.frequency.value = 3200; f.Q.value = 0.6;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f).connect(g).connect(this.ctx.destination); src.start(t); src.stop(t + dur);
+    },
+    thunk() {
+      if (!this.on || !this.ctx) return;
+      const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.9);
+      g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t + 1.2);
+      this.hiss(0.5, 0.08);
+    },
+    startHum() {
+      if (!this.on || !this.ctx || this.hum || !powered) return;
+      const g = this.ctx.createGain(); g.gain.value = 0.012;
+      const a = this.ctx.createOscillator(); a.type = "triangle"; a.frequency.value = 60;
+      const w = this.ctx.createOscillator(); w.type = "sine"; w.frequency.value = 15734;
+      const wg = this.ctx.createGain(); wg.gain.value = 0.25;
+      a.connect(g); w.connect(wg).connect(g); g.connect(this.ctx.destination); a.start(); w.start();
+      this.hum = { a, w, g };
+    },
+    stopHum() { if (this.hum) { this.hum.a.stop(); this.hum.w.stop(); this.hum = null; } },
+  };
+
+  // ---------------- static noise ----------------
+  const cvs = $("#static"), cx = cvs.getContext("2d");
+  const SW = 320, SH = 240;
+  cvs.width = SW; cvs.height = SH;
+  const img = cx.createImageData(SW, SH), buf = new Uint32Array(img.data.buffer);
+  let last = 0, staticLevel = 0.08;
+  function drawStatic(now) {
+    requestAnimationFrame(drawStatic);
+    if (now - last < (reduce ? 160 : 33)) return;
+    last = now;
+    if (!powered && staticBoost <= 0.01) { cvs.style.opacity = 0; return; }
+    const [r, g, b] = PHOS[phIdx].rgb;
+    const band = Math.random() < 0.08 ? (Math.random() * SH) | 0 : -1;
+    for (let y = 0; y < SH; y++) {
+      const hot = band >= 0 && Math.abs(y - band) < 6 ? 1.8 : 1;
+      for (let x = 0; x < SW; x++) {
+        const v = Math.min(1, Math.random() * hot);
+        buf[y * SW + x] = (255 << 24) | ((b * v) << 16) | ((g * v) << 8) | (r * v);
+      }
+    }
+    cx.putImageData(img, 0, 0);
+    staticBoost *= 0.86;
+    cvs.style.opacity = Math.min(1, staticLevel + staticBoost);
+  }
+  requestAnimationFrame(drawStatic);
+
+  // animated "no signal" fills
+  const NOISE = "░▒▓ ·:";
+  function noiseText(n, label) {
+    let s = "";
+    for (let i = 0; i < n; i++) s += NOISE[(Math.random() * NOISE.length) | 0];
+    if (label && n > label.length + 4 && Math.random() > 0.12) {
+      const at = ((n - label.length) / 2) | 0;
+      const shown = label.split("").map(c => (Math.random() < 0.08 ? NOISE[(Math.random() * 3) | 0] : c)).join("");
+      s = s.slice(0, at) + shown + s.slice(at + label.length);
+    }
+    return s;
+  }
+  setInterval(() => {
+    if (!powered) return;
+    document.querySelectorAll("[data-noise]").forEach(el => {
+      el.textContent = noiseText(+el.dataset.noise, el.dataset.label);
+    });
+  }, reduce ? 600 : 90);
+
+  // ---------------- channel tuner ----------------
+  const pad = (n) => String(n).padStart(2, "0");
+  tuner.innerHTML = CHANNELS.map((c, i) =>
+    `<button type="button" role="tab" data-ch="${i}" aria-selected="false" title="${c.name}">${pad(i)} ${c.code}</button>`).join("");
+  tuner.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) tune(+b.dataset.ch); });
+
+  function setKnob() {
+    $("#knob-ch").style.setProperty("--rot", (-135 + (ch / (CHANNELS.length - 1)) * 270) + "deg");
+  }
+  let osdTimer;
+  function showOSD() {
+    const osd = $("#osd");
+    $("#osd-ch").textContent = "CH " + pad(ch);
+    $("#osd-name").textContent = CHANNELS[ch].name;
+    osd.classList.add("show");
+    clearTimeout(osdTimer);
+    osdTimer = setTimeout(() => osd.classList.remove("show"), 2200);
+  }
+
+  function tune(n, opts = {}) {
+    if (!powered || booting) return;
+    ch = (n + CHANNELS.length) % CHANNELS.length;
+    tuner.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-selected", i === ch ? "true" : "false"));
+    setKnob();
+    staticBoost = opts.soft ? 0.5 : 0.95;
+    sfx.hiss();
+    blinkLed();
+    content.classList.add("tuning");
+    setTimeout(() => {
+      content.classList.remove("tuning");
+      render();
+      showOSD();
+    }, reduce ? 0 : 260);
+  }
+
+  function blinkLed() {
+    const led = $("#led");
+    led.classList.add("busy");
+    setTimeout(() => { if (powered) led.classList.remove("busy"); }, 380);
+  }
+
+  // ---------------- views ----------------
+  const esc = (s) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function render() {
+    bars = [];
+    view.scrollTop = 0;
+    if (ch === 0) renderMatrix(); else renderBench(CHANNELS[ch]);
+  }
+
+  function renderBench(b) {
+    const s = SCORES[b.id];
+    const top = leaders(b);
+    const rows = MODELS.map(m => ({ m, v: s[m.id] ? s[m.id][0] : null, src: s[m.id] ? s[m.id][1] : null }))
+      .sort((a, z) => (z.v ?? -1) - (a.v ?? -1));
+    const used = [...new Set(rows.filter(r => r.src).map(r => r.src))];
+    view.innerHTML = `
+      <div class="bh">
+        <div class="eyebrow">CH ${pad(ch)} · ${esc(b.unit)} · ${rows.filter(r => r.v != null).length} of ${MODELS.length} readings</div>
+        <h2>${esc(b.name)}</h2>
+        <p>${esc(b.what)}</p>
+      </div>
+      <div class="bars" role="list">
+        ${rows.map(r => {
+          const lead = top.includes(r.m.id);
+          const label = `${r.m.name}: ${r.v != null ? r.v.toFixed(1) + "%" + (lead ? ", top score" : "") + ", source " + SRC[r.src] : "no reading"}`;
+          return `<div class="bar-row${lead ? " lead" : ""}${r.v == null ? " nosig" : ""}" role="listitem" aria-label="${esc(label)}" title="${esc(r.src ? "Source: " + SRC[r.src] : "No reading on file")}">
+            <span class="who" aria-hidden="true"><span class="mk">${lead ? "►" : " "}</span> ${esc(r.m.name)} <span class="lab">${r.m.lab}</span></span>
+            <span class="bar" aria-hidden="true" ${r.v == null ? 'data-noise="20" data-label=" NO SIGNAL "' : ""}></span>
+            <span class="score" aria-hidden="true">${r.v == null ? "--.-" : "0.0"}</span>
+          </div>`;
+        }).join("")}
+        <div class="bar-row axis" aria-hidden="true"><span class="who"></span><span class="bar"></span><span class="score">%</span></div>
+      </div>
+      <div class="src">SRC ${used.map(u => `${u}=${SRC[u]}`).join(" · ")} · scale 0–100</div>`;
+
+    const rowEls = view.querySelectorAll(".bar-row");
+    rows.forEach((r, i) => {
+      const el = rowEls[i];
+      if (r.v == null) return;
+      bars.push({ bar: el.querySelector(".bar"), score: el.querySelector(".score"), v: r.v, cur: reduce ? r.v : 0, delay: i * 85 });
+    });
+    layoutBars();
+    if (!reduce) animateBars();
+  }
+
+  function cellsFor(el) {
+    const cw = $("#probe").getBoundingClientRect().width / 20 || 8;
+    return Math.max(8, Math.floor(el.clientWidth / cw));
+  }
+
+  function barText(v, n) {
+    const exact = (v / 100) * n, full = Math.floor(exact), frac = exact - full;
+    const part = full >= n ? "" : frac > 0.75 ? "▓" : frac > 0.5 ? "▒" : frac > 0.2 ? "░" : "";
+    const rest = Math.max(0, n - full - part.length);
+    return `${"█".repeat(full)}${part}<i>${"█".repeat(rest)}</i>`;
+  }
+
+  function layoutBars() {
+    const anyBar = view.querySelector(".bar");
+    if (!anyBar) return;
+    const n = cellsFor(anyBar);
+    bars.forEach(b => { b.n = n; b.bar.innerHTML = barText(b.cur, n); b.score.textContent = b.cur.toFixed(1); });
+    view.querySelectorAll(".bar[data-noise]").forEach(el => { el.dataset.noise = n; el.textContent = noiseText(n, el.dataset.label); });
+    const axis = view.querySelector(".axis .bar");
+    if (axis) {
+      const full = n * ($("#probe").getBoundingClientRect().width / 20 || 8);
+      axis.style.width = Math.min(full, anyBar.clientWidth) + "px";
+      axis.innerHTML = [0, 25, 50, 75, 100].map(v => `<span style="left:${v}%">${v}</span>`).join("");
+    }
+  }
+
+  let animId = 0;
+  function animateBars() {
+    const id = ++animId, t0 = performance.now(), dur = 950;
+    (function step(now) {
+      if (id !== animId) return;
+      let done = true;
+      bars.forEach(b => {
+        const t = Math.min(1, Math.max(0, (now - t0 - b.delay) / dur));
+        const e = 1 - Math.pow(1 - t, 3);
+        b.cur = b.v * e;
+        if (t < 1) done = false;
+        b.bar.innerHTML = barText(b.cur, b.n);
+        b.score.textContent = t < 1 && t > 0 ? (b.cur + Math.random() * 0.9).toFixed(1) : b.cur.toFixed(1);
+      });
+      if (!done) requestAnimationFrame(step);
+    })(t0);
+  }
+
+  function renderMatrix() {
+    const wins = Object.fromEntries(MODELS.map(m => [m.id, 0]));
+    const stats = BENCHES.map(b => {
+      const vals = Object.values(SCORES[b.id]).map(v => v[0]);
+      const tops = leaders(b);
+      tops.forEach(t => wins[t]++);
+      return { min: Math.min(...vals), max: Math.max(...vals), tops };
+    });
+    const count = (m) => BENCHES.filter(b => SCORES[b.id][m.id]).length;
+    const order = [...MODELS].sort((a, z) => wins[z.id] - wins[a.id] || count(z) - count(a));
+
+    let d = 0;
+    view.innerHTML = `
+      <div class="bh">
+        <div class="eyebrow">CH 00 · ${MODELS.length} models × ${BENCHES.length} benchmarks · ${readings} of ${slots} readings</div>
+        <h2>The whole field</h2>
+        <p>Brighter cell, higher score within that benchmark. ► marks the top reading. Static means nothing on file. Pick a column to tune in.</p>
+      </div>
+      <div class="tablewrap">
+        <table id="matrix">
+          <thead><tr>
+            <th scope="col">Model</th>
+            ${BENCHES.map((b, i) => `<th scope="col"><button type="button" data-ch="${i + 1}" title="Tune to ${esc(b.name)}">${b.code}</button></th>`).join("")}
+            <th scope="col" class="wins">Wins</th>
+          </tr></thead>
+          <tbody>
+            ${order.map(m => `<tr>
+              <th scope="row">${esc(m.name)} <span class="lab">${m.lab}</span></th>
+              ${BENCHES.map((b, i) => {
+                const r = SCORES[b.id][m.id];
+                if (!r) return `<td><span class="nosig" data-noise="4" aria-label="no reading"></span></td>`;
+                const st = stats[i], norm = st.max === st.min ? 1 : (r[0] - st.min) / (st.max - st.min);
+                const a = (0.1 + norm * 0.72).toFixed(2);
+                const top = st.tops.includes(m.id);
+                return `<td class="cell${a > 0.5 ? " inv" : ""}${top ? " top" : ""}" style="--a:${a};--d:${(d++ * 28)}ms" title="${esc(b.name)} · source ${SRC[r[1]]}"><span data-final="${r[0].toFixed(1)}">${r[0].toFixed(1)}</span></td>`;
+              }).join("")}
+              <td class="wins" aria-label="${wins[m.id]} wins">${"■".repeat(wins[m.id]) || "·"}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="src">SRC per cell on hover · ties share the win (SWE-V)</div>`;
+
+    view.querySelectorAll("thead button").forEach(btn => btn.addEventListener("click", () => tune(+btn.dataset.ch)));
+    const table = view.querySelector("#matrix");
+    table.addEventListener("mouseover", (e) => {
+      const c = e.target.closest("td, th");
+      if (!c) return;
+      table.querySelectorAll(".xcol").forEach(x => x.classList.remove("xcol"));
+      if (c.cellIndex > 0 && c.cellIndex <= BENCHES.length) table.querySelectorAll("tr").forEach(tr => tr.cells[c.cellIndex].classList.add("xcol"));
+    });
+    table.addEventListener("mouseleave", () => table.querySelectorAll(".xcol").forEach(x => x.classList.remove("xcol")));
+    if (!reduce) view.querySelectorAll("[data-final]").forEach((el, i) => scramble(el, el.dataset.final, 350 + i * 28));
+  }
+
+  function scramble(el, final, dur) {
+    const t0 = performance.now();
+    (function step(now) {
+      const t = (now - t0) / dur;
+      if (t >= 1) { el.textContent = final; return; }
+      el.textContent = final.replace(/\d/g, (c, i) => (t * final.length > i + 1.5 ? c : (Math.random() * 10) | 0));
+      requestAnimationFrame(step);
+    })(t0);
+  }
+
+  // ---------------- ticker, clock, signal ----------------
+  function buildTicker() {
+    const items = [`SCOREFILE 2026-10-13`, `${MODELS.length} MODELS · ${BENCHES.length} BENCHMARKS · ${readings} READINGS`];
+    BENCHES.forEach(b => {
+      const t = leaders(b);
+      const v = SCORES[b.id][t[0]][0].toFixed(1);
+      items.push(`${b.name.toUpperCase()}: ${t.map(id => byId[id].name.toUpperCase()).join(" & ")} ${t.length > 1 ? "TIE" : "LEADS"} AT ${v}%`);
+    });
+    items.push("◄ ► TO CHANGE CHANNEL", "TURN THE PHOSPHOR KNOB FOR AMBER / GREEN / ICE", "PICTURE WOBBLY? HIT DEGAUSS");
+    const el = $("#ticker");
+    el.textContent = "+++ " + items.join("  +++  ") + "  +++";
+    el.style.animationDuration = Math.round(el.textContent.length * 0.2) + "s";
+  }
+  const clock = $("#clock");
+  setInterval(() => { clock.textContent = new Date().toLocaleTimeString("en-GB"); }, 1000);
+  clock.textContent = new Date().toLocaleTimeString("en-GB");
+  const sig = $("#sig");
+  let sigLvl = 4;
+  setInterval(() => {
+    if (!powered) return;
+    sigLvl = Math.max(2, Math.min(5, sigLvl + ((Math.random() * 3) | 0) - 1));
+    sig.textContent = "SIG " + "▮".repeat(sigLvl) + "▯".repeat(5 - sigLvl);
+  }, 700);
+
+  // ---------------- glitches ----------------
+  function scheduleGlitch() {
+    setTimeout(() => {
+      if (powered && !booting && !document.hidden) {
+        if (Math.random() < 0.18) {
+          tube.classList.add("vhold");
+          staticBoost = 0.4;
+          setTimeout(() => tube.classList.remove("vhold"), 720);
+        } else {
+          content.classList.add("glitch");
+          staticBoost = 0.3;
+          setTimeout(() => content.classList.remove("glitch"), 230);
+        }
+      }
+      scheduleGlitch();
+    }, 3500 + Math.random() * 7000);
+  }
+  if (!reduce) scheduleGlitch();
+
+  // ---------------- boot ----------------
+  function boot() {
+    booting = true;
+    clearTimeout(bootTimer);
+    view.innerHTML = `<div class="boot" id="boot"></div>`;
+    const out = $("#boot");
+    const lines = [
+      "CATHODE·BENCH CM-1426 MONOCHROME DISPLAY",
+      "BIOS v2.6  (C) 1986-2026",
+      "",
+      "MEMORY TEST ........ {mem}",
+      `PHOSPHOR ........... ${PHOS[phIdx].label}`,
+      "MOUNTING SCOREFILE 2026-10-13.DAT",
+      `   ${MODELS.length} MODELS · ${BENCHES.length} BENCHMARKS · ${readings} READINGS`,
+      `   ${slots - readings} EMPTY SLOTS WILL SHOW STATIC`,
+      "CALIBRATING BEAM ... OK",
+      "",
+      "TUNING CH 00 ▌",
+    ];
+    if (reduce) { booting = false; tune(0, { soft: true }); return; }
+    let i = 0;
+    (function next() {
+      if (!powered) return;
+      if (i >= lines.length) { bootTimer = setTimeout(() => { booting = false; tune(0); }, 380); return; }
+      const div = document.createElement("div");
+      const line = lines[i++];
+      out.appendChild(div);
+      if (line.includes("{mem}")) {
+        let k = 0;
+        const iv = setInterval(() => {
+          k += 64;
+          div.textContent = line.replace("{mem}", (k >= 640 ? "640K OK" : String(k).padStart(3, "0") + "K"));
+          if (k >= 640) { clearInterval(iv); bootTimer = setTimeout(next, 90); }
+        }, 28);
+      } else {
+        div.textContent = line || " ";
+        bootTimer = setTimeout(next, line ? 110 : 60);
+      }
+    })();
+  }
+  view.addEventListener("click", () => {
+    if (booting) { clearTimeout(bootTimer); booting = false; tune(0); }
+  });
+
+  // ---------------- front panel ----------------
+  function applyPhosphor(save) {
+    const p = PHOS[phIdx];
+    root.dataset.phosphor = p.id;
+    $("#ph-label").textContent = p.label;
+    $("#knob-ph").style.setProperty("--rot", p.rot + "deg");
+    if (save) { try { localStorage.setItem("cathode-phosphor", p.id); } catch (e) {} }
+  }
+  function cyclePhosphor() {
+    phIdx = (phIdx + 1) % PHOS.length;
+    applyPhosphor(true);
+    staticBoost = 0.6;
+    sfx.hiss(0.15, 0.08);
+  }
+
+  $("#knob-ch").addEventListener("click", (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const down = e.detail > 0 && e.clientX < r.left + r.width / 2;
+    tune(ch + (down ? -1 : 1));
+  });
+  $("#knob-ph").addEventListener("click", cyclePhosphor);
+
+  function degauss() {
+    if (!powered) return;
+    tube.classList.remove("degauss");
+    void tube.offsetWidth;
+    tube.classList.add("degauss");
+    staticBoost = 0.5;
+    sfx.thunk();
+    setTimeout(() => tube.classList.remove("degauss"), 1200);
+  }
+  $("#degauss").addEventListener("click", degauss);
+
+  $("#sound").addEventListener("click", (e) => {
+    sfx.init();
+    sfx.on = !sfx.on;
+    if (sfx.ctx && sfx.ctx.state === "suspended") sfx.ctx.resume();
+    e.currentTarget.setAttribute("aria-pressed", String(sfx.on));
+    if (sfx.on) { sfx.startHum(); sfx.hiss(); } else sfx.stopHum();
+  });
+
+  function setPower(on) {
+    powered = on;
+    const led = $("#led"), btn = $("#power");
+    btn.setAttribute("aria-pressed", String(on));
+    document.body.classList.toggle("poweroff", !on);
+    tube.classList.remove("on", "off", "dead", "degauss");
+    void tube.offsetWidth;
+    if (on) {
+      led.className = "led lit";
+      tube.classList.add("on");
+      staticBoost = 0.8;
+      sfx.startHum();
+      sfx.hiss(0.6, 0.1);
+      boot();
+    } else {
+      led.className = "led";
+      animId++;
+      clearTimeout(bootTimer);
+      booting = false;
+      tube.classList.add("off");
+      sfx.stopHum();
+      sfx.thunk();
+      const g = $("#afterglow");
+      g.classList.remove("fade"); void g.offsetWidth;
+      setTimeout(() => { g.classList.add("fade"); tube.classList.remove("off"); tube.classList.add("dead"); }, reduce ? 0 : 400);
+    }
+  }
+  $("#power").addEventListener("click", () => setPower(!powered));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "ArrowRight") { tune(ch + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft") { tune(ch - 1); e.preventDefault(); }
+    else if (/^[0-7]$/.test(e.key)) tune(+e.key);
+    else if (e.key === "p" || e.key === "P") cyclePhosphor();
+    else if (e.key === "d" || e.key === "D") degauss();
+  });
+
+  // keep bars to scale when the tube resizes
+  new ResizeObserver(() => { if (ch !== 0 && !booting && powered) layoutBars(); }).observe($("#screen"));
+
+  applyPhosphor(false);
+  buildTicker();
+  setKnob();
+  boot();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (ch !== 0 && !booting) layoutBars(); });
+})();
+</script>
+</body>
+</html>
