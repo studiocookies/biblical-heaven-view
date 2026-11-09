@@ -89,3 +89,10 @@ src/hotelfinder/
   evaluate.py   # cheapest + best-value picking
   cli.py        # prompts, rendering, entry point
 ```
+
+## Seasons Orrery (`seasons/`)
+
+A standalone page, `seasons/index.html`, that shows how the seasons change over
+the Earth. One date slider drives a 3D orbit/close-up globe (Three.js), a 2D
+day-and-night world map, and year-long charts of daylight hours and sunlight
+energy by latitude. Open the file in a browser; it needs no build step.
