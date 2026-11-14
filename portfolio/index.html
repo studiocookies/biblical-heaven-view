@@ -32,6 +32,7 @@ const SITE = {
   title: 'Me Time',                        // the big animated headline at the top
   name: 'Izaiah Osborn',                   // shown in the menu bar and the footer
   tagline: 'YOUR TAGLINE HERE',            // one short line under the headline, or ''
+  time: 'night',                           // 'night', 'day', or 'auto' (night from 7pm to 7am on the visitor's clock)
 };
 
 /* --------------------------------------------------------------------------
@@ -228,6 +229,12 @@ a { color: var(--sky); }
   background: repeating-linear-gradient(to left, rgba(244, 234, 211, .7) 0 4px, transparent 4px 12px);
   -webkit-mask-image: linear-gradient(to left, #000, transparent); mask-image: linear-gradient(to left, #000, transparent);
 }
+/* Night sky (night only): pixel stars and a crescent moon behind the title */
+.stars { position: absolute; inset: 0 0 auto; height: 300px; -webkit-mask-image: linear-gradient(#000 50%, transparent); mask-image: linear-gradient(#000 50%, transparent); }
+.star { position: absolute; width: 2px; height: 2px; color: var(--line); background: currentColor; animation: shine 3.4s steps(3) infinite; }
+.star.big { width: 3px; height: 3px; box-shadow: 0 -3px, 0 3px, -3px 0, 3px 0; }
+@keyframes shine { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+.moon { position: absolute; top: 22px; right: max(20px, 7%); width: 48px; height: 48px; image-rendering: pixelated; filter: drop-shadow(0 0 14px rgba(243, 226, 187, .45)); }
 @keyframes fly { from { transform: translate(-30vw, 0); } to { transform: translate(110vw, 46px); } }
 @keyframes hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes pulse { 50% { background: var(--cream); } }
@@ -285,6 +292,7 @@ a { color: var(--sky); }
   color: var(--ink); background: var(--line); padding: .4em .55em; white-space: nowrap;
   box-shadow: 0 .3em 0 rgba(0, 0, 0, .4);
 }
+[data-time="night"] .labels span { box-shadow: 0 .3em 0 rgba(0, 0, 0, .4), 0 0 1.2em rgba(255, 214, 140, .35); }
 .wipe {
   position: absolute; inset: 0; background: var(--ink);
   clip-path: circle(0% at var(--x, 50%) var(--y, 50%));
@@ -423,6 +431,7 @@ dialog.lb::backdrop { background: rgba(4, 14, 28, .88); }
   .hud-nav a { padding: 8px 6px; }
   .hud-nav a::before { margin-right: 4px; }
   .pad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); }
+  .moon { top: 8px; width: 32px; height: 32px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -500,6 +509,13 @@ dialog.lb::backdrop { background: rgba(4, 14, 28, .88); }
 
 const $ = (s, el = document) => el.querySelector(s);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const NIGHT = (() => {
+  const t = String((typeof SITE !== 'undefined' && SITE && SITE.time) || 'night').toLowerCase().trim();
+  if (t === 'day') return false;
+  if (t === 'auto') { const h = new Date().getHours(); return h >= 19 || h < 7; }
+  return true;
+})();
+document.documentElement.dataset.time = NIGHT ? 'night' : 'day';
 const ROOFS = {
   red: ['#e0424f', '#9e2438'], teal: ['#2bb8a0', '#1a7a6a'], purple: ['#8a4fff', '#5a2bb8'],
   gold: ['#e8a417', '#a8700a'], cream: ['#efdcb2', '#bfa679'], white: ['#f2f6fb', '#aebfd3'], cyan: ['#4fd6ea', '#2192aa'], blue: ['#3f7cff', '#2550b8'], green: ['#4caf50', '#2e7a32'], pink: ['#ff6bb5', '#b83a7a'],
@@ -656,8 +672,11 @@ function goToSection(id) {
    The town has 6 building lots. Places fill them in the order of LOTS, so
    three buildings make a balanced triangle and more fill in around them.
    Empty lots get a pond or a grove of trees instead.
+   Street lamps stand beside the roads; at night they, the windows and the
+   walker's lantern are the only light.
    ========================================================================== */
 const TS = 16, COLS = 21, ROWS = 12;
+const LAMPS = [[5, 4], [15, 4], [8, 9], [12, 9]];   // tiles beside the roads, clear of every lot
 const LOTS = [
   { c: 2, r: 2 },   // top left
   { c: 16, r: 2 },  // top right
@@ -716,6 +735,7 @@ function buildTown() {
       grid[l.r + 2][l.c] = 'f'; grid[l.r + 2][l.c + 2] = 'f';
     }
   });
+  LAMPS.forEach(([x, y]) => { grid[y][x] = 'l'; });
   for (let y = 1; y < ROWS - 1; y++) for (let x = 1; x < COLS - 1; x++) {
     if (grid[y][x] === 'g' && !inLot(x, y) && hash(x, y, 77) < .08) grid[y][x] = 'f';
   }
@@ -759,11 +779,23 @@ function paintStatic(grid, placed) {
       g.fillStyle = '#2f7d3b'; g.fillRect(fx, fy + 2, 1, 2);
     }
   };
+  const lamp = (x, y) => {
+    grass(x, y);
+    const X = x * TS, Y = y * TS;
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(X + 6, Y + 15, 7, 1);
+    g.fillStyle = '#2b3140';
+    g.fillRect(X + 7, Y, 2, 1); g.fillRect(X + 4, Y + 1, 8, 2);   // cap
+    g.fillRect(X + 5, Y + 3, 6, 5);                                // lantern frame
+    g.fillRect(X + 7, Y + 8, 2, 6); g.fillRect(X + 5, Y + 14, 6, 2); // post and foot
+    g.fillStyle = '#4a5268'; g.fillRect(X + 7, Y + 8, 1, 6);
+    g.fillStyle = '#c9d6e3'; g.fillRect(X + 6, Y + 3, 4, 4);       // glass (lit at night)
+  };
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const t = grid[y][x];
     if (t === 't') tree(x, y);
     else if (t === 'p') path(x, y);
     else if (t === 'f') flower(x, y);
+    else if (t === 'l') lamp(x, y);
     else if (t !== 'w') grass(x, y);
   }
   // pond rim (water itself shimmers, so it's drawn every frame)
@@ -797,10 +829,155 @@ function paintStatic(grid, placed) {
   return c;
 }
 
+/* ---------- Night: moonlight over everything, pools of lamplight, things that glow ----------
+   Each frame builds a light map (lamps, porches, windows, the walker's lantern),
+   bands it into a few dithered steps so it stays pixel-art, and multiplies it
+   over the town. Windows, lamp glass, fireflies and the moon on the pond are
+   drawn on top afterwards, so they shine at full brightness. */
+const MAP_W = COLS * TS, MAP_H = ROWS * TS;
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16);
+const MOONLIGHT = [78, 96, 164], LAMPLIGHT = [255, 238, 196];
+const BANDS = [0, .34, .6, .82, 1];
+// small seeded random numbers, so stars and fireflies land in the same spots on every visit
+function seeded(seed) {
+  return () => {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function nightLayer(grid, placed) {
+  const shade = document.createElement('canvas'); shade.width = MAP_W; shade.height = MAP_H;
+  const sg = shade.getContext('2d');
+  const img = sg.createImageData(MAP_W, MAP_H), px = img.data;
+  for (let j = 3; j < px.length; j += 4) px[j] = 255;
+  const lit = new Float32Array(MAP_W * MAP_H);
+  const top = BANDS.length - 1;
+  const ramp = BANDS.map(s => MOONLIGHT.map((m, i) => Math.round(m + (LAMPLIGHT[i] - m) * s)));
+
+  const fixed = [], windows = [], porches = [];
+  LAMPS.forEach(([x, y], i) => fixed.push({ x: x * TS + 8, y: y * TS + 7, r: 40, a: 1, seed: 1 + i * 2.3 }));
+  placed.forEach(b => {
+    const X = b.lot.c * TS, Y = b.lot.r * TS, W = 3 * TS;
+    porches.push([X + TS + 7, Y + 26]);
+    fixed.push({ x: X + TS + 8, y: Y + 42, r: 24, a: .85 });
+    [[X + 6, Y + 24], [X + W - 14, Y + 24]].forEach(([wx, wy]) => {
+      windows.push([wx, wy]);
+      fixed.push({ x: wx + 4, y: wy + 5, r: 13, a: .7 });
+    });
+  });
+
+  let pond = null;
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    if (grid[y][x] !== 'w') continue;
+    if (!pond) pond = { x0: x, y0: y, x1: x, y1: y };
+    pond.x0 = Math.min(pond.x0, x); pond.y0 = Math.min(pond.y0, y);
+    pond.x1 = Math.max(pond.x1, x); pond.y1 = Math.max(pond.y1, y);
+  }
+  const rnd = seeded(7);
+  if (pond) {
+    pond = { x: pond.x0 * TS, y: pond.y0 * TS, w: (pond.x1 - pond.x0 + 1) * TS, h: (pond.y1 - pond.y0 + 1) * TS };
+    pond.glints = Array.from({ length: 5 }, () => [pond.x + 2 + (rnd() * (pond.w - 4) | 0), pond.y + 2 + (rnd() * (pond.h - 4) | 0)]);
+  }
+
+  const flies = Array.from({ length: 10 }, () => ({
+    x: 28 + rnd() * (MAP_W - 56), y: 24 + rnd() * (MAP_H - 48), sp: .6 + rnd() * .8, ph: rnd() * 6.283,
+  }));
+
+  function shadeOver(g, t, extra) {
+    lit.fill(0);
+    for (const s of fixed.concat(extra)) {
+      const r = s.seed ? s.r * (1 + .035 * Math.sin(t * 9 + s.seed) + .02 * Math.sin(t * 23 + s.seed * 3)) : s.r;
+      const x0 = Math.max(0, Math.floor(s.x - r)), x1 = Math.min(MAP_W - 1, Math.ceil(s.x + r));
+      const y0 = Math.max(0, Math.floor(s.y - r)), y1 = Math.min(MAP_H - 1, Math.ceil(s.y + r));
+      for (let y = y0; y <= y1; y++) {
+        const dy = y + .5 - s.y;
+        for (let x = x0; x <= x1; x++) {
+          const dx = x + .5 - s.x, d = Math.sqrt(dx * dx + dy * dy) / r;
+          if (d >= 1) continue;
+          const v = (1 - d) * s.a, k = y * MAP_W + x;
+          if (v > lit[k]) lit[k] = v;
+        }
+      }
+    }
+    for (let y = 0, k = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++, k++) {
+      let q = (lit[k] * top + BAYER[(y & 3) << 2 | (x & 3)]) | 0;
+      if (q > top) q = top;
+      const c = ramp[q], j = k * 4;
+      px[j] = c[0]; px[j + 1] = c[1]; px[j + 2] = c[2];
+    }
+    sg.putImageData(img, 0, 0);
+    g.globalCompositeOperation = 'multiply';
+    g.drawImage(shade, 0, 0);
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  function glow(g, t) {
+    windows.forEach(([wx, wy], i) => {
+      const passing = Math.sin(t * .6 + i * 1.9) > .97;   // now and then someone walks past
+      g.fillStyle = passing ? '#c98a34' : '#ffc45c';
+      [[0, 0], [5, 0], [0, 5], [5, 5]].forEach(([ox, oy]) => g.fillRect(wx + ox, wy + oy, 3, 3));
+      g.fillStyle = '#fff0b8'; g.fillRect(wx, wy, 2, 1); g.fillRect(wx + 5, wy, 2, 1);
+    });
+    porches.forEach(([x, y]) => { g.fillStyle = '#ffc45c'; g.fillRect(x - 1, y, 4, 2); g.fillStyle = '#fff6d6'; g.fillRect(x, y, 2, 2); });
+    LAMPS.forEach(([x, y]) => {
+      g.fillStyle = '#ffe9a8'; g.fillRect(x * TS + 6, y * TS + 3, 4, 4);
+      g.fillStyle = '#ffffff'; g.fillRect(x * TS + 7, y * TS + 4, 2, 2);
+    });
+    if (pond) {
+      const cx = pond.x + pond.w * .68, cy = pond.y + 7;
+      [[6, '#f3e2bb'], [4, '#d9d3c0'], [5, '#a9b9d8'], [3, '#8aa0cc']].forEach(([w, c], i) => {
+        g.fillStyle = c;
+        g.fillRect(Math.round(cx - w / 2 + Math.sin(t * 2.2 + i * 1.3) * 1.5), cy + i * 3, w, 1);
+      });
+      g.fillStyle = '#cfe6ff';
+      pond.glints.forEach(([x, y], i) => { if (Math.sin(t * 2.6 + i * 2.1) > .3) g.fillRect(x, y, 1, 1); });
+    }
+    flies.forEach(f => {
+      const blink = Math.sin(t * 1.6 * f.sp + f.ph * 3);
+      if (blink < -.2) return;
+      const x = Math.round(f.x + Math.sin(t * .35 * f.sp + f.ph) * 20);
+      const y = Math.round(f.y + Math.cos(t * .5 * f.sp + f.ph * 1.3) * 10);
+      g.fillStyle = 'rgba(214, 255, 130, .4)'; g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3);
+      g.fillStyle = blink > .5 ? '#f4ffc0' : '#c8f070'; g.fillRect(x, y, 1, 1);
+    });
+  }
+
+  return { shade: shadeOver, glow };
+}
+
+/* Stars and a crescent moon above the title, night only */
+function nightSky() {
+  const stars = el('div', { class: 'stars' });
+  const tints = ['var(--line)', 'var(--white)', 'var(--sky)', 'var(--cream)'];
+  const rnd = seeded(42);
+  for (let i = 0; i < 56; i++) {
+    const s = el('i', { class: rnd() < .16 ? 'star big' : 'star' });
+    s.style.left = `${(1 + rnd() * 98).toFixed(2)}%`;
+    s.style.top = `${(2 + rnd() * 92).toFixed(2)}%`;
+    s.style.color = tints[rnd() * tints.length | 0];
+    s.style.animationDelay = `${(-rnd() * 4).toFixed(2)}s`;
+    s.style.animationDuration = `${(2.4 + rnd() * 3).toFixed(2)}s`;
+    stars.append(s);
+  }
+  const moon = el('canvas', { class: 'moon', width: 16, height: 16 });
+  const m = moon.getContext('2d');
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    const bite = Math.hypot(x + .5 - 11.5, y + .5 - 5.5);
+    if (Math.hypot(x + .5 - 8, y + .5 - 8) >= 7 || bite < 6) continue;
+    m.fillStyle = bite < 7.4 ? '#d9c193' : '#f3e2bb';
+    m.fillRect(x, y, 1, 1);
+  }
+  $('.sky').prepend(stars, moon);
+}
+
 function initTown() {
   const world = $('#world'), canvas = $('#map'), g = canvas.getContext('2d'), wipe = $('#wipe');
   const { grid, placed } = buildTown();
   const staticLayer = paintStatic(grid, placed);
+  const night = NIGHT ? nightLayer(grid, placed) : null;
   const doorAt = {};
   placed.forEach(p => { doorAt[`${p.door.x},${p.door.y}`] = p; });
 
@@ -876,25 +1053,16 @@ function initTown() {
   }
 
   function draw(now) {
-    const t = now / 1000;
+    const t = now / 1000, amb = reduced ? 0 : t;
     g.drawImage(staticLayer, 0, 0);
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
       if (grid[y][x] !== 'w') continue;
       g.fillStyle = '#2f6fd6'; g.fillRect(x * TS, y * TS, TS, TS);
       g.fillStyle = '#6fa8ff';
       for (let k = 0; k < 2; k++) {
-        const wx = ((x * TS + k * 8 + (reduced ? 0 : t * 6) + (y % 2) * 5) % TS) | 0;
+        const wx = ((x * TS + k * 8 + amb * 6 + (y % 2) * 5) % TS) | 0;
         g.fillRect(x * TS + wx, y * TS + 4 + k * 7, 4, 1);
       }
-    }
-    // goal marker
-    if (P.goal && !P.goal.place) {
-      g.fillStyle = Math.sin(t * 10) > 0 ? '#f3e2bb' : '#ffffff';
-      const gx = P.goal.x * TS, gy = P.goal.y * TS;
-      g.fillRect(gx + 3, gy + 3, 3, 1); g.fillRect(gx + 3, gy + 3, 1, 3);
-      g.fillRect(gx + 10, gy + 3, 3, 1); g.fillRect(gx + 12, gy + 3, 1, 3);
-      g.fillRect(gx + 3, gy + 12, 3, 1); g.fillRect(gx + 3, gy + 10, 1, 3);
-      g.fillRect(gx + 10, gy + 12, 3, 1); g.fillRect(gx + 12, gy + 10, 1, 3);
     }
     const px = Math.round(P.x) + 3, py = Math.round(P.y) + 3;
     const frame = P.moving ? (P.t < .5 ? 1 + (P.step % 2) : 0) : 0;
@@ -904,6 +1072,21 @@ function initTown() {
     const flip = P.dir === 'left';
     drawSprite(g, body, px, py + bob - 1, flip);
     drawSprite(g, HERO.legs[frame], px, py + bob + 10, flip);
+    if (night) {
+      const lantern = [{ x: P.x + 8, y: P.y + 9, r: 30, a: .9 }];   // the walker carries a little light
+      if (P.goal && !P.goal.place) lantern.push({ x: P.goal.x * TS + 8, y: P.goal.y * TS + 8, r: 12, a: .8 });
+      night.shade(g, amb, lantern);
+      night.glow(g, amb);
+    }
+    // goal marker (drawn last so it stays bright at night)
+    if (P.goal && !P.goal.place) {
+      g.fillStyle = Math.sin(t * 10) > 0 ? '#f3e2bb' : '#ffffff';
+      const gx = P.goal.x * TS, gy = P.goal.y * TS;
+      g.fillRect(gx + 3, gy + 3, 3, 1); g.fillRect(gx + 3, gy + 3, 1, 3);
+      g.fillRect(gx + 10, gy + 3, 3, 1); g.fillRect(gx + 12, gy + 3, 1, 3);
+      g.fillRect(gx + 3, gy + 12, 3, 1); g.fillRect(gx + 3, gy + 10, 1, 3);
+      g.fillRect(gx + 10, gy + 12, 3, 1); g.fillRect(gx + 12, gy + 10, 1, 3);
+    }
   }
 
   function loop(now) {
@@ -961,6 +1144,7 @@ function initTown() {
 
 /* ---------- Boot ---------- */
 renderPage();
+if (NIGHT) nightSky();
 const town = initTown();
 
 if (matchMedia('(pointer: fine)').matches) town.focus();
