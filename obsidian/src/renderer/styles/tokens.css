@@ -1,0 +1,162 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   OBSIDIAN design tokens
+   Brushed aluminum chassis · deep-space workspace · ice-blue instrumentation
+   No purple anywhere. Accents are ice/instrument blue; status uses green/amber/red.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* chassis metal */
+  --metal-base: #b9c0c7;
+  --metal-hi: #e4e8ec;
+  --metal-mid: #c9cfd5;
+  --metal-lo: #9aa3ac;
+  --metal-edge: #7d8791;
+  --metal-ink: #2b3239;          /* engraved text on metal */
+  --metal-ink-soft: #55606b;
+  --graphite: #30363d;
+
+  /* workspace */
+  --ws-black: #070b10;
+  --ws-0: #0a0f15;
+  --ws-1: #0d141d;               /* secondary surface */
+  --ws-2: #131c27;               /* raised surface */
+  --ws-3: #1a2533;
+  --ws-hover: #172231;
+  --border: #273543;
+  --border-soft: #1c2733;
+  --border-strong: #35485b;
+
+  /* instrumentation */
+  --ice: #a9dfff;
+  --ice-dim: #7fb6d6;
+  --instrument: #6dbbee;
+  --instrument-deep: #2f6f9a;
+  --ok: #75d6aa;
+  --warn: #e9bd72;
+  --err: #f08080;
+
+  --text: #e6edf3;
+  --text-2: #94a4b5;
+  --text-3: #66788b;
+  --text-on-ice: #06121c;
+
+  --glow-ice: 0 0 0 1px rgba(169, 223, 255, 0.35), 0 0 12px rgba(109, 187, 238, 0.18);
+  --focus: 0 0 0 2px rgba(169, 223, 255, 0.75);
+
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro', 'Helvetica Neue', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'SF Mono', SFMono-Regular, ui-monospace, Menlo, Monaco, 'JetBrains Mono', 'DejaVu Sans Mono', monospace;
+
+  --r-xs: 3px;
+  --r-sm: 5px;
+  --r-md: 7px;
+  --r-lg: 10px;
+
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 280ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  --rail-w: 60px;
+  --titlebar-h: 52px;
+  --statusbar-h: 26px;
+
+  color-scheme: dark;
+}
+
+:root[data-contrast='high'] {
+  --border: #4a6175;
+  --border-soft: #33475a;
+  --border-strong: #6a86a0;
+  --text: #f6fafd;
+  --text-2: #c2d0dd;
+  --text-3: #93a6b8;
+  --metal-ink-soft: #3a434c;
+}
+
+:root[data-motion='reduce'] {
+  --dur-fast: 0ms;
+  --dur: 0ms;
+  --dur-slow: 0ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion='full']) {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+    --dur-slow: 0ms;
+  }
+}
+
+/* ── Materials ─────────────────────────────────────────────────────────── */
+
+/* Fine horizontal brushing: stretched turbulence, desaturated, very low alpha. */
+.mat-brushed {
+  background-color: var(--metal-base);
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='300'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.0035 0.85' numOctaves='4' seed='7' stitchTiles='stitch'/><feColorMatrix values='1.6 0 0 0 -0.32  1.6 0 0 0 -0.31  1.6 0 0 0 -0.29  0 0 0 0 0.17'/></filter><rect width='100%' height='100%' filter='url(%23b)'/></svg>"),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.08) 38%, rgba(0, 0, 0, 0.04) 70%, rgba(0, 0, 0, 0.12) 100%),
+    linear-gradient(100deg, #aab2ba 0%, #d8dde2 22%, #c0c7ce 44%, #e1e5e9 63%, #bcc3ca 82%, #a9b1b9 100%);
+  background-size: 700px 300px, 100% 100%, 100% 100%;
+}
+
+.mat-brushed-vertical {
+  background-color: var(--metal-base);
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='300'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.0035 0.85' numOctaves='4' seed='3' stitchTiles='stitch'/><feColorMatrix values='1.6 0 0 0 -0.32  1.6 0 0 0 -0.31  1.6 0 0 0 -0.29  0 0 0 0 0.17'/></filter><rect width='100%' height='100%' filter='url(%23b)'/></svg>"),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.05) 45%, rgba(0, 0, 0, 0.1)),
+    linear-gradient(180deg, #c6ccd2, #d9dee3 30%, #b8bfc6 70%, #aeb5bd);
+  background-size: 700px 300px, 100% 100%, 100% 100%;
+}
+
+/* Engraved label on metal */
+.engraved {
+  color: var(--metal-ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55), 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Machined bezel around dark wells set into the chassis */
+.bezel {
+  border-radius: var(--r-lg);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.65),
+    0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(40, 48, 56, 0.55);
+}
+
+.screw {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f3f5f7, #9aa3ac 60%, #6d767f);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.6);
+  position: relative;
+}
+.screw::after {
+  content: '';
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  top: 3px;
+  height: 1px;
+  background: rgba(40, 46, 52, 0.55);
+  transform: rotate(-28deg);
+}
+
+/* Status LEDs */
+.led {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: #3b4652;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+.led[data-state='ok'] { background: var(--ok); box-shadow: 0 0 6px rgba(117, 214, 170, 0.55); }
+.led[data-state='busy'] { background: var(--ice); box-shadow: 0 0 7px rgba(169, 223, 255, 0.7); animation: led-pulse 1.6s var(--ease) infinite; }
+.led[data-state='warn'] { background: var(--warn); box-shadow: 0 0 6px rgba(233, 189, 114, 0.5); }
+.led[data-state='err'] { background: var(--err); box-shadow: 0 0 6px rgba(240, 128, 128, 0.5); }
+.led[data-state='off'] { background: #3b4652; }
+@keyframes led-pulse { 50% { opacity: 0.45; } }
+:root[data-motion='reduce'] .led[data-state='busy'] { animation: none; }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion='full']) .led[data-state='busy'] { animation: none; } }
