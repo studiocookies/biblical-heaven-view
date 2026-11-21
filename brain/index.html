@@ -661,15 +661,15 @@ function burst(n) {
     dx /= d; dy /= d; dz /= d;
     // Strong near impact, plus a whole-brain shatter
     const local = Math.exp(-(d * d) / 0.35);
-    const mag = power * (0.16 * local + 0.055 + 0.03 * rand[i]) * (0.6 + Math.random() * 0.8);
+    const mag = power * (0.051 * local + 0.0145 + 0.007 * rand[i]) * (0.7 + Math.random() * 0.6);
     // A bit of chaos so it doesn't look like a perfect sphere
-    vel[i3] += (dx + (Math.random() - 0.5) * 0.7) * mag;
-    vel[i3 + 1] += (dy + (Math.random() - 0.5) * 0.7) * mag;
-    vel[i3 + 2] += (dz + (Math.random() - 0.5) * 0.7) * mag;
+    vel[i3] += (dx + (Math.random() - 0.5) * 0.45) * mag;
+    vel[i3 + 1] += (dy + (Math.random() - 0.5) * 0.45) * mag;
+    vel[i3 + 2] += (dz + (Math.random() - 0.5) * 0.45) * mag;
   }
   burstAt = clock.elapsedTime;
-  uniforms.uFlash.value = 1;
-  energy = 1;
+  uniforms.uFlash.value = 0.5;
+  energy = 0.6;
   bursts++;
   rBursts.textContent = bursts;
 }
@@ -685,9 +685,9 @@ const REPEL_R = 0.36, REPEL_R2 = REPEL_R * REPEL_R;
 function simulate(now) {
   const since = now - burstAt;
   // After a burst: float slack for a beat, then snap back together
-  const slack = since < 0 ? 1 : smooth(0.25, 1.6, since);
-  const k = 0.0035 + 0.0185 * slack;
-  const damp = 0.955 - 0.06 * slack; // 0.955 floaty -> 0.895 tight
+  const slack = since < 0 ? 1 : smooth(0.3, 1.8, since);
+  const k = 0.0012 + 0.007 * slack; // soft springs = slow, syrupy return
+  const damp = 0.968 - 0.033 * slack; // thick drag: slow drift out after a burst, gentle settle
   // Intro assembly: soft springs for the first couple of seconds
   const intro = smooth(0.0, 2.6, now);
   const kk = k * (0.25 + 0.75 * intro);
@@ -726,10 +726,10 @@ function simulate(now) {
       if (d2 < REPEL_R2) {
         const d = Math.sqrt(d2) + 1e-4;
         const f = (1 - d / REPEL_R);
-        const ff = f * f * 0.022;
-        vx += (cx / d) * ff + mvx * f * 0.55;
-        vy += (cy / d) * ff + mvy * f * 0.55;
-        vz += (cz / d) * ff + mvz * f * 0.55;
+        const ff = f * f * 0.011;
+        vx += (cx / d) * ff + mvx * f * 0.32;
+        vy += (cy / d) * ff + mvy * f * 0.32;
+        vz += (cz / d) * ff + mvz * f * 0.32;
       }
     }
 
@@ -738,8 +738,8 @@ function simulate(now) {
     pos[i3] = px; pos[i3 + 1] = py; pos[i3 + 2] = pz;
     vel[i3] = vx; vel[i3 + 1] = vy; vel[i3 + 2] = vz;
 
-    const sp = Math.sqrt(vx * vx + vy * vy + vz * vz) * 38;
-    speed[i] += (Math.min(sp, 1.2) - speed[i]) * 0.25;
+    const sp = Math.sqrt(vx * vx + vy * vy + vz * vz) * 60;
+    speed[i] += (Math.min(sp, 1.2) - speed[i]) * 0.12;
     stir += sp;
   }
   moveLocal.multiplyScalar(0);
