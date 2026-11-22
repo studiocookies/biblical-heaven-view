@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cortex Studio</title>
+<meta name="description" content="A glowing particle cross that scatters under your cursor and bursts when you tap it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #04050b;
+  --bg-2: #080b1a;
+  --ink: #eef3ff;
+  --ink-dim: rgba(220, 230, 255, 0.62);
+  --ink-faint: rgba(200, 215, 255, 0.32);
+  --line: rgba(160, 190, 255, 0.14);
+  --ice: #9fd6ff;
+  --hot: #ff5ad1;
+  --f-sans: "Space Grotesk", system-ui, sans-serif;
+  --f-serif: "Instrument Serif", Georgia, serif;
+  --f-mono: "JetBrains Mono", ui-monospace, monospace;
+  --gutter: clamp(16px, 4vw, 56px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); }
+body {
+  font-family: var(--f-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+
+/* ---------- NAV ---------- */
+.nav {
+  position: fixed; inset: 0 0 auto 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px var(--gutter);
+  pointer-events: none;
+}
+.nav > * { pointer-events: auto; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.02em; font-size: 17px; }
+.logo-mark {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff 0 8%, var(--ice) 22%, #3b5bdb 55%, transparent 72%);
+  box-shadow: 0 0 18px rgba(120, 190, 255, 0.7);
+}
+.links { display: flex; gap: 34px; font-size: 14px; color: var(--ink-dim); }
+.links a { position: relative; transition: color .25s; }
+.links a:hover { color: var(--ink); }
+.links a::after {
+  content: ""; position: absolute; left: 0; right: 100%; bottom: -6px; height: 1px;
+  background: var(--ice); transition: right .3s ease;
+}
+.links a:hover::after { right: 0; }
+.cta {
+  font-size: 14px; font-weight: 500;
+  padding: 11px 20px; border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: background .25s, border-color .25s;
+}
+.cta:hover { background: rgba(159, 214, 255, 0.12); border-color: rgba(159,214,255,0.4); }
+
+/* ---------- HERO ---------- */
+.hero {
+  position: relative;
+  height: 100vh; height: 100svh; min-height: 620px;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 70% at 68% 46%, rgba(40, 70, 170, 0.22), transparent 70%),
+    radial-gradient(40% 50% at 20% 90%, rgba(255, 90, 209, 0.06), transparent 70%),
+    var(--bg);
+}
+#gl {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  display: block; touch-action: pan-y; cursor: crosshair;
+}
+.hero-grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.hero-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.65) 100%),
+              linear-gradient(to bottom, transparent 70%, var(--bg) 100%);
+}
+.hero-copy {
+  position: absolute; z-index: 5;
+  left: var(--gutter); bottom: clamp(72px, 14vh, 150px);
+  max-width: min(560px, 46vw);
+  pointer-events: none;
+}
+.hero-copy .actions { pointer-events: auto; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ice); margin-bottom: 26px;
+}
+.eyebrow i {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--ice);
+  box-shadow: 0 0 10px var(--ice); animation: pulse 2.2s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
+h1 {
+  font-weight: 400; font-size: clamp(48px, 7.4vw, 118px);
+  line-height: .92; letter-spacing: -0.035em;
+}
+h1 em {
+  font-family: var(--f-serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em;
+  background: linear-gradient(100deg, #fff 10%, var(--ice) 45%, var(--hot) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  padding-right: .06em;
+}
+.lede {
+  margin-top: 26px; max-width: 420px;
+  font-size: clamp(15px, 1.15vw, 18px); line-height: 1.55; color: var(--ink-dim); font-weight: 300;
+}
+.actions { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 15px 24px; border-radius: 999px; font-size: 15px; font-weight: 500;
+  transition: transform .25s, box-shadow .25s, background .25s;
+}
+.btn-primary {
+  background: var(--ink); color: #050714;
+  box-shadow: 0 0 0 0 rgba(159,214,255,.0), 0 10px 40px -10px rgba(159,214,255,.55);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 0 6px rgba(159,214,255,.12), 0 16px 50px -10px rgba(159,214,255,.7); }
+.btn-primary svg { transition: transform .25s; }
+.btn-primary:hover svg { transform: translateX(3px); }
+.btn-ghost { border: 1px solid var(--line); color: var(--ink); background: rgba(255,255,255,.02); }
+.btn-ghost:hover { background: rgba(255,255,255,.07); }
+
+.meta {
+  position: absolute; z-index: 5; right: var(--gutter); bottom: clamp(72px, 14vh, 150px);
+  display: grid; gap: 22px; text-align: right; pointer-events: none;
+}
+.meta div { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+.meta b { display: block; font-family: var(--f-sans); font-size: 28px; font-weight: 400; letter-spacing: -0.02em; color: var(--ink); text-transform: none; margin-bottom: 4px; }
+
+.hint {
+  position: absolute; z-index: 5; left: 50%; bottom: 26px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-faint); pointer-events: none; white-space: nowrap;
+  transition: opacity .8s;
+}
+.hint span { display: inline-block; width: 28px; height: 1px; background: var(--ink-faint); }
+.hint.gone { opacity: 0; }
+
+.readout {
+  position: absolute; z-index: 5; top: 92px; right: var(--gutter);
+  font-family: var(--f-mono); font-size: 10.5px; line-height: 1.8; letter-spacing: .1em;
+  color: var(--ink-faint); text-align: right; text-transform: uppercase; pointer-events: none;
+}
+.readout em { font-style: normal; color: var(--ice); }
+
+/* ---------- NEXT SECTION TEASER ---------- */
+.strip {
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  overflow: hidden; padding: 22px 0; background: var(--bg);
+}
+.marquee { display: flex; gap: 56px; width: max-content; animation: slide 38s linear infinite; }
+.marquee span { font-size: clamp(22px, 3vw, 40px); letter-spacing: -0.02em; color: var(--ink-dim); white-space: nowrap; display: flex; align-items: center; gap: 56px; }
+.marquee span::after { content: "✦"; font-size: .5em; color: var(--ice); }
+.marquee span:nth-child(even) { font-family: var(--f-serif); font-style: italic; color: var(--ink); }
+@keyframes slide { to { transform: translateX(-50%); } }
+.intro {
+  padding: clamp(80px, 12vw, 160px) var(--gutter);
+  display: grid; grid-template-columns: 1fr 2fr; gap: 40px;
+  background: linear-gradient(var(--bg), var(--bg-2));
+}
+.intro small { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ice); }
+.intro p { font-size: clamp(24px, 3vw, 44px); line-height: 1.2; letter-spacing: -0.02em; font-weight: 300; }
+.intro p em { font-family: var(--f-serif); color: var(--ice); }
+
+.fallback {
+  position: absolute; inset: 0; display: none; place-items: center;
+  color: var(--ink-faint); font-family: var(--f-mono); font-size: 12px;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 860px) {
+  .links { display: none; }
+  .hero-copy { max-width: none; right: var(--gutter); bottom: 64px; }
+  .meta, .readout { display: none; }
+  h1 { font-size: clamp(44px, 13vw, 76px); }
+  .lede { margin-top: 18px; }
+  .actions { margin-top: 24px; }
+  .eyebrow { margin-bottom: 18px; }
+  .hint { bottom: 20px; font-size: 10px; }
+  .intro { grid-template-columns: 1fr; }
+}
+@media (max-width: 400px) {
+  .cta { padding: 9px 15px; font-size: 13px; }
+  .btn { padding: 13px 19px; font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee, .eyebrow i { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="logo" href="#"><span class="logo-mark"></span>Cortex</a>
+  <nav class="links">
+    <a href="#">Work</a>
+    <a href="#">Lab</a>
+    <a href="#">Studio</a>
+    <a href="#">Journal</a>
+  </nav>
+  <a class="cta" href="#">Start a project</a>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <canvas id="gl" aria-label="Interactive particle cross. Move across it to scatter the particles, tap to make it burst."></canvas>
+    <div class="fallback" id="fallback">WebGL is unavailable in this browser.</div>
+    <div class="hero-grain"></div>
+    <div class="hero-vignette"></div>
+
+    <div class="readout" aria-hidden="true">
+      <div>Particles <em id="r-count">—</em></div>
+      <div>Signal <em id="r-signal">idle</em></div>
+      <div>Bursts <em id="r-bursts">0</em></div>
+    </div>
+
+    <div class="hero-copy">
+      <div class="eyebrow"><i></i>Creative intelligence studio</div>
+      <h1>Ideas that<br><em>fire.</em></h1>
+      <p class="lede">We design brands, products and interfaces that think a little faster than everything around them.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#">See our work
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10m0 0L8.5 3.5M13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="#">Our process</a>
+      </div>
+    </div>
+
+    <div class="meta" aria-hidden="true">
+      <div><b>140+</b>Launches</div>
+      <div><b>12 yrs</b>Of practice</div>
+    </div>
+
+    <div class="hint" id="hint"><span></span>Tap the cross · drag to scatter<span></span></div>
+  </section>
+
+  <div class="strip" aria-hidden="true">
+    <div class="marquee">
+      <span>Brand systems</span><span>Interactive worlds</span><span>Product design</span><span>Motion</span><span>Creative code</span><span>Strategy</span>
+      <span>Brand systems</span><span>Interactive worlds</span><span>Product design</span><span>Motion</span><span>Creative code</span><span>Strategy</span>
+    </div>
+  </div>
+
+  <section class="intro">
+    <small>(01) — The studio</small>
+    <p>A small team of designers and engineers building work that feels <em>alive</em> — responsive, tactile, and impossible to scroll past.</p>
+  </section>
+</main>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+const canvas = document.getElementById("gl");
+const hero = document.getElementById("hero");
+const hint = document.getElementById("hint");
+const rSignal = document.getElementById("r-signal");
+const rBursts = document.getElementById("r-bursts");
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isSmall = Math.min(innerWidth, innerHeight) < 700 || matchMedia("(pointer: coarse)").matches;
+
+/* ======================================================================
+   Noise (improved Perlin) — used to carve the gyri and sulci
+   ====================================================================== */
+const perm = new Uint8Array(512);
+{
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  let s = 1337;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 255; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+}
+const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+const lerp = (a, b, t) => a + t * (b - a);
+function grad(h, x, y, z) {
+  const hh = h & 15, u = hh < 8 ? x : y, v = hh < 4 ? y : (hh === 12 || hh === 14 ? x : z);
+  return ((hh & 1) ? -u : u) + ((hh & 2) ? -v : v);
+}
+function noise(x, y, z) {
+  const X = Math.floor(x) & 255, Y = Math.floor(y) & 255, Z = Math.floor(z) & 255;
+  x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+  const u = fade(x), v = fade(y), w = fade(z);
+  const A = perm[X] + Y, AA = perm[A] + Z, AB = perm[A + 1] + Z;
+  const B = perm[X + 1] + Y, BA = perm[B] + Z, BB = perm[B + 1] + Z;
+  return lerp(lerp(lerp(grad(perm[AA], x, y, z), grad(perm[BA], x - 1, y, z), u),
+                   lerp(grad(perm[AB], x, y - 1, z), grad(perm[BB], x - 1, y - 1, z), u), v),
+              lerp(lerp(grad(perm[AA + 1], x, y, z - 1), grad(perm[BA + 1], x - 1, y, z - 1), u),
+                   lerp(grad(perm[AB + 1], x, y - 1, z - 1), grad(perm[BB + 1], x - 1, y - 1, z - 1), u), v), w);
+}
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+/* ======================================================================
+   Cross point cloud
+   x = left/right, y = up, z = front(+)/back(-)
+   A solid Latin cross (two boxes) with bright edges and a faint grain,
+   plus soft rays of light radiating from behind the crossing.
+   ====================================================================== */
+const COUNT = isSmall ? 26000 : 52000;
+document.getElementById("r-count").textContent = COUNT.toLocaleString();
+
+function randDir() {
+  const u = Math.random() * 2 - 1, t = Math.random() * Math.PI * 2, r = Math.sqrt(1 - u * u);
+  return [r * Math.cos(t), u, r * Math.sin(t)];
+}
+
+const T = 0.15, D = 0.13;          // beam half-thickness, half-depth
+const CROSS_Y = 0.42;              // where the crossbeam sits
+const Y_SHIFT = -0.22;             // re-centre the whole cross in view
+// [cx, cy, hx, hy, hz]
+const BOXES = [
+  [0, -0.06, T, 1.18, D],          // upright: y from -1.24 to 1.12
+  [0, CROSS_Y, 0.7, T, D],         // crossbeam: x from -0.7 to 0.7
+];
+const insideBox = (b, x, y, z, eps) =>
+  Math.abs(x - b[0]) < b[2] - eps && Math.abs(y - b[1]) < b[3] - eps && Math.abs(z) < b[4] - eps;
+
+// Every face of both boxes, weighted by area so the density is even
+const FACES = [];
+for (const b of BOXES) {
+  const [cx, cy, hx, hy, hz] = b;
+  for (const s of [-1, 1]) {
+    FACES.push({ axis: 0, s, b, area: hy * hz });
+    FACES.push({ axis: 1, s, b, area: hx * hz });
+    FACES.push({ axis: 2, s, b, area: hx * hy });
+  }
+}
+const FACE_TOTAL = FACES.reduce((a, f) => a + f.area, 0);
+
+function crossSurfacePoint() {
+  let r = Math.random() * FACE_TOTAL, f = FACES[0];
+  for (const ff of FACES) { r -= ff.area; if (r <= 0) { f = ff; break; } }
+  const [cx, cy, hx, hy, hz] = f.b;
+  let u = Math.random() * 2 - 1, v = Math.random() * 2 - 1;
+  let x, y, z, du, dv; // du/dv: distance to the face's edges
+  if (f.axis === 0)      { x = cx + f.s * hx; y = cy + u * hy; z = v * hz; du = (1 - Math.abs(u)) * hy; dv = (1 - Math.abs(v)) * hz; }
+  else if (f.axis === 1) { y = cy + f.s * hy; x = cx + u * hx; z = v * hz; du = (1 - Math.abs(u)) * hx; dv = (1 - Math.abs(v)) * hz; }
+  else                   { z = f.s * hz; x = cx + u * hx; y = cy + v * hy; du = (1 - Math.abs(u)) * hx; dv = (1 - Math.abs(v)) * hy; }
+  // Drop the parts of each box hidden inside the other one
+  for (const b of BOXES) if (b !== f.b && insideBox(b, x, y, z, 0.002)) return null;
+
+  const edge = Math.min(du, dv);
+  const rim = Math.exp(-edge / 0.028);               // glowing silhouette edges
+  // Wood-like grain running along each beam
+  const vertical = f.b === BOXES[0];
+  const g = vertical ? noise(x * 9, y * 1.3, z * 9 + 3) : noise(x * 1.3 + 5, y * 9, z * 9);
+  const grain = 0.5 + 0.5 * Math.sin((vertical ? x + z : y + z) * 70 + g * 6);
+  // Front face a little brighter than the sides and back
+  const facing = f.axis === 2 ? (f.s > 0 ? 1 : 0.6) : 0.75;
+  let bright = Math.min(1, (0.32 + 0.38 * grain) * facing + 0.75 * rim);
+  if (Math.random() > 0.35 + 0.65 * bright) return null;
+  // Tiny jitter so it reads as glowing dust, not a hard mesh
+  const j = 0.006;
+  return [x + (Math.random() - 0.5) * j, y + Y_SHIFT + (Math.random() - 0.5) * j, z + (Math.random() - 0.5) * j, bright];
+}
+
+function interiorPoint() {
+  const b = BOXES[Math.random() < 0.65 ? 0 : 1];
+  return [b[0] + (Math.random() * 2 - 1) * b[2] * 0.9, b[1] + Y_SHIFT + (Math.random() * 2 - 1) * b[3] * 0.95,
+          (Math.random() * 2 - 1) * b[4] * 0.9, 0.1 + 0.12 * Math.random()];
+}
+
+// Rays of light fanning out from behind the crossing
+const RAYS = 16;
+function rayPoint() {
+  const k = Math.floor(Math.random() * RAYS);
+  const long = k % 2 === 0;
+  const ang = (k / RAYS) * Math.PI * 2 + (Math.random() - 0.5) * (long ? 0.05 : 0.035);
+  const len = long ? 2.0 : 1.35;
+  const t = Math.pow(Math.random(), 1.6);             // denser near the centre
+  const r = 0.28 + t * len;
+  const fadeOut = 1 - t;
+  if (Math.random() > 0.25 + 0.75 * fadeOut) return null;
+  return [Math.cos(ang) * r, CROSS_Y + Y_SHIFT + Math.sin(ang) * r, -0.32 - Math.random() * 0.06,
+          0.12 + 0.3 * fadeOut * (long ? 1 : 0.7)];
+}
+
+// Soft halo ring behind the crossing
+function haloPoint() {
+  const ang = Math.random() * Math.PI * 2;
+  const r = 0.55 + (Math.random() + Math.random() - 1) * 0.03;
+  return [Math.cos(ang) * r, CROSS_Y + Y_SHIFT + Math.sin(ang) * r, -0.3, 0.3 + 0.25 * Math.random()];
+}
+
+const home = new Float32Array(COUNT * 3);
+const pos = new Float32Array(COUNT * 3);
+const vel = new Float32Array(COUNT * 3);
+const bright = new Float32Array(COUNT);
+const rand = new Float32Array(COUNT);
+const speed = new Float32Array(COUNT);
+
+for (let i = 0; i < COUNT; i++) {
+  const r = Math.random();
+  let p = null;
+  while (!p) {
+    if (r < 0.82) p = crossSurfacePoint();
+    else if (r < 0.86) p = interiorPoint();
+    else if (r < 0.965) p = rayPoint();
+    else p = haloPoint();
+  }
+  home[i * 3] = p[0]; home[i * 3 + 1] = p[1]; home[i * 3 + 2] = p[2];
+  bright[i] = p[3];
+  rand[i] = Math.random();
+  // Start scattered — the cross assembles on load
+  const [sx, sy, sz] = randDir();
+  const sr = 2.5 + Math.random() * 4;
+  pos[i * 3] = sx * sr; pos[i * 3 + 1] = sy * sr; pos[i * 3 + 2] = sz * sr;
+}
+
+/* ======================================================================
+   Three.js setup
+   ====================================================================== */
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: "high-performance" });
+} catch (e) {
+  document.getElementById("fallback").style.display = "grid";
+  throw e;
+}
+const DPR = Math.min(devicePixelRatio || 1, 2);
+renderer.setPixelRatio(DPR);
+renderer.setClearColor(0x000000, 0);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+camera.position.set(0, 0, 6);
+
+const rig = new THREE.Group();   // placement + pointer tilt
+const brain = new THREE.Group(); // auto-rotation
+rig.add(brain);
+scene.add(rig);
+
+const geo = new THREE.BufferGeometry();
+const posAttr = new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage);
+const speedAttr = new THREE.BufferAttribute(speed, 1).setUsage(THREE.DynamicDrawUsage);
+geo.setAttribute("position", posAttr);
+geo.setAttribute("aHome", new THREE.BufferAttribute(home, 3));
+geo.setAttribute("aBright", new THREE.BufferAttribute(bright, 1));
+geo.setAttribute("aRand", new THREE.BufferAttribute(rand, 1));
+geo.setAttribute("aSpeed", speedAttr);
+
+const uniforms = {
+  uTime: { value: 0 },
+  uSize: { value: isSmall ? 14 : 15 },
+  uPR: { value: DPR },
+  uFlash: { value: 0 },
+  uDeep: { value: new THREE.Color("#1c3b9e") },
+  uIce: { value: new THREE.Color("#cbe8ff") },
+  uSyn: { value: new THREE.Color("#6fd3ff") },
+  uHot: { value: new THREE.Color("#ff4fcf") },
+  uHot2: { value: new THREE.Color("#ffb36b") },
+};
+
+const material = new THREE.ShaderMaterial({
+  uniforms,
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  vertexShader: /* glsl */`
+    attribute vec3 aHome;
+    attribute float aBright;
+    attribute float aRand;
+    attribute float aSpeed;
+    uniform float uTime, uSize, uPR, uFlash;
+    uniform vec3 uDeep, uIce, uSyn, uHot, uHot2;
+    varying vec3 vColor;
+    varying float vAlpha;
+    void main() {
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mv;
+
+      // Per-neuron twinkle
+      float tw = pow(0.5 + 0.5 * sin(uTime * (0.5 + aRand * 2.2) + aRand * 91.0), 18.0);
+      // Synaptic waves sweeping across the cortex
+      float w1 = sin(dot(aHome, normalize(vec3(0.2, 0.5, 1.0))) * 5.0 - uTime * 1.4);
+      float w2 = sin(dot(aHome, normalize(vec3(-1.0, 0.3, -0.2))) * 7.0 - uTime * 1.05 + 2.0);
+      float wave = smoothstep(0.93, 1.0, w1) + 0.7 * smoothstep(0.95, 1.0, w2);
+
+      float s = clamp(aSpeed, 0.0, 1.0);
+      vec3 base = mix(uDeep, uIce, aBright);
+      vec3 col = base + uSyn * (tw * 0.9 + wave * 0.55) * aBright;
+      vec3 hot = mix(uHot, uHot2, smoothstep(0.55, 1.0, s) * aRand);
+      col = mix(col, hot, smoothstep(0.05, 0.6, s) * 0.85);
+      col += uFlash * vec3(0.4, 0.6, 1.0) * 0.15;
+      vColor = col;
+
+      // Depth cue: front brighter than back
+      float depth = smoothstep(9.0, 4.6, -mv.z);
+      vAlpha = (0.16 + 0.5 * aBright) * (0.3 + 0.7 * depth) * (1.0 + s * 0.35 + tw * 1.5 + wave * 0.8);
+
+      float size = uSize * (0.45 + aBright * 0.55 + aRand * 0.35) * (1.0 + s * 0.45 + tw * 0.8 + wave * 0.35);
+      gl_PointSize = size * uPR / -mv.z;
+    }
+  `,
+  fragmentShader: /* glsl */`
+    varying vec3 vColor;
+    varying float vAlpha;
+    void main() {
+      vec2 c = gl_PointCoord - 0.5;
+      float d = length(c);
+      if (d > 0.5) discard;
+      float core = smoothstep(0.5, 0.0, d);
+      float a = core * core * (0.6 + 0.4 * smoothstep(0.18, 0.0, d));
+      gl_FragColor = vec4(vColor, a * vAlpha);
+    }
+  `,
+});
+const points = new THREE.Points(geo, material);
+points.frustumCulled = false;
+brain.add(points);
+
+/* Ambient dust field */
+const DUST = isSmall ? 700 : 1600;
+const dustPos = new Float32Array(DUST * 3);
+const dustRand = new Float32Array(DUST);
+for (let i = 0; i < DUST; i++) {
+  dustPos[i * 3] = (Math.random() - 0.5) * 16;
+  dustPos[i * 3 + 1] = (Math.random() - 0.5) * 10;
+  dustPos[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2;
+  dustRand[i] = Math.random();
+}
+const dustGeo = new THREE.BufferGeometry();
+dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
+dustGeo.setAttribute("aRand", new THREE.BufferAttribute(dustRand, 1));
+const dust = new THREE.Points(dustGeo, new THREE.ShaderMaterial({
+  uniforms: { uTime: uniforms.uTime, uPR: uniforms.uPR },
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: `
+    attribute float aRand; uniform float uTime, uPR; varying float vA;
+    void main(){
+      vec3 p = position;
+      p.y += mod(uTime * (0.04 + aRand * 0.08) + aRand * 10.0, 10.0) - 5.0;
+      p.x += sin(uTime * 0.2 + aRand * 30.0) * 0.2;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      vA = (0.25 + 0.75 * pow(0.5 + 0.5 * sin(uTime * (0.6 + aRand) + aRand * 50.0), 4.0)) * 0.5;
+      gl_PointSize = (6.0 + aRand * 10.0) * uPR / -mv.z;
+    }`,
+  fragmentShader: `
+    varying float vA;
+    void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard;
+      gl_FragColor = vec4(vec3(0.62, 0.78, 1.0), smoothstep(0.5, 0.0, d) * vA); }`,
+}));
+scene.add(dust);
+
+/* Post-processing: bloom */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.55, 0.45, 0.22);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+/* ======================================================================
+   Layout
+   ====================================================================== */
+let W = 1, H = 1, wide = true;
+function resize() {
+  W = hero.clientWidth; H = hero.clientHeight;
+  renderer.setSize(W, H, false);
+  composer.setSize(W, H);
+  bloom.setSize(W * DPR, H * DPR);
+  camera.aspect = W / H;
+  wide = W / H > 1.05;
+  if (wide) {
+    camera.position.z = 6;
+    rig.position.set(Math.min(1.25, 0.55 * camera.aspect), 0.12, 0);
+    rig.scale.setScalar(0.96);
+  } else {
+    // Phone / portrait: brain sits on top, copy underneath
+    const fit = Math.min(1, camera.aspect / 0.62);
+    camera.position.z = 6;
+    rig.position.set(0, 0.98, 0);
+    rig.scale.setScalar((0.68 * fit + 0.1) * 0.7);
+  }
+  camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+resize();
+
+/* ======================================================================
+   Interaction
+   ====================================================================== */
+const ndc = new THREE.Vector2(9, 9);
+const raycaster = new THREE.Raycaster();
+const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+const hitWorld = new THREE.Vector3();
+const lastHitWorld = new THREE.Vector3();
+const moveWorld = new THREE.Vector3();
+const inv = new THREE.Matrix4();
+const rayO = new THREE.Vector3(), rayD = new THREE.Vector3(), tmp = new THREE.Vector3();
+const moveLocal = new THREE.Vector3();
+let pointerActive = false, hadHit = false, interacted = false;
+let tiltX = 0, tiltY = 0;
+let energy = 0; // how stirred up the brain is (drives readout + bloom)
+let bursts = 0;
+const pendingBursts = [];
+
+function setPointer(clientX, clientY) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+  pointerActive = true;
+  if (!interacted) { interacted = true; hint.classList.add("gone"); }
+}
+canvas.addEventListener("pointermove", e => { if (e.pointerType === "mouse") setPointer(e.clientX, e.clientY); });
+canvas.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") { pointerActive = false; hadHit = false; } });
+canvas.addEventListener("pointerdown", e => {
+  setPointer(e.clientX, e.clientY);
+  pendingBursts.push(ndc.clone());
+});
+// Touch: keep tracking even while the page scrolls (touch events still fire during a pan)
+canvas.addEventListener("touchstart", e => { const t = e.touches[0]; setPointer(t.clientX, t.clientY); hadHit = false; }, { passive: true });
+canvas.addEventListener("touchmove", e => { const t = e.touches[0]; setPointer(t.clientX, t.clientY); }, { passive: true });
+canvas.addEventListener("touchend", () => { pointerActive = false; hadHit = false; }, { passive: true });
+
+// Burst state: spring goes slack right after a burst, then tightens back up
+let burstAt = -10;
+
+function rayToLocal(n) {
+  raycaster.setFromCamera(n, camera);
+  inv.copy(points.matrixWorld).invert();
+  rayO.copy(raycaster.ray.origin).applyMatrix4(inv);
+  tmp.copy(raycaster.ray.origin).add(raycaster.ray.direction).applyMatrix4(inv);
+  rayD.copy(tmp).sub(rayO).normalize();
+}
+
+function burst(n) {
+  rayToLocal(n);
+  // Point on ray nearest the brain's centre = where the "impact" lands
+  const t = -(rayO.x * rayD.x + rayO.y * rayD.y + rayO.z * rayD.z);
+  const hx = rayO.x + rayD.x * t, hy = rayO.y + rayD.y * t, hz = rayO.z + rayD.z * t;
+  const distToCenter = Math.hypot(hx, hy, hz);
+  const onBrain = distToCenter < 1.25;
+  const power = onBrain ? 1 : 0.45;
+  for (let i = 0; i < COUNT; i++) {
+    const i3 = i * 3;
+    let dx = pos[i3] - hx, dy = pos[i3 + 1] - hy, dz = pos[i3 + 2] - hz;
+    const d = Math.hypot(dx, dy, dz) + 1e-4;
+    dx /= d; dy /= d; dz /= d;
+    // Strong near impact, plus a whole-brain shatter
+    const local = Math.exp(-(d * d) / 0.35);
+    const mag = power * (0.051 * local + 0.0145 + 0.007 * rand[i]) * (0.7 + Math.random() * 0.6);
+    // A bit of chaos so it doesn't look like a perfect sphere
+    vel[i3] += (dx + (Math.random() - 0.5) * 0.45) * mag;
+    vel[i3 + 1] += (dy + (Math.random() - 0.5) * 0.45) * mag;
+    vel[i3 + 2] += (dz + (Math.random() - 0.5) * 0.45) * mag;
+  }
+  burstAt = clock.elapsedTime;
+  uniforms.uFlash.value = 0.5;
+  energy = 0.6;
+  bursts++;
+  rBursts.textContent = bursts;
+}
+
+/* ======================================================================
+   Simulation
+   ====================================================================== */
+const clock = new THREE.Clock();
+let acc = 0;
+const STEP = 1 / 60;
+const REPEL_R = 0.36, REPEL_R2 = REPEL_R * REPEL_R;
+
+function simulate(now) {
+  const since = now - burstAt;
+  // After a burst: float slack for a beat, then snap back together
+  const slack = since < 0 ? 1 : smooth(0.3, 1.8, since);
+  const k = 0.0012 + 0.007 * slack; // soft springs = slow, syrupy return
+  const damp = 0.968 - 0.033 * slack; // thick drag: slow drift out after a burst, gentle settle
+  // Intro assembly: soft springs for the first couple of seconds
+  const intro = smooth(0.0, 2.6, now);
+  const kk = k * (0.25 + 0.75 * intro);
+  const dd = damp - 0.035 * (1 - intro); // extra damping while assembling = no wobble
+
+  // Pointer ray in brain-local space
+  let doRepel = false;
+  if (pointerActive) {
+    rayToLocal(ndc);
+    raycaster.ray.intersectPlane(plane, hitWorld);
+    if (hadHit) moveWorld.subVectors(hitWorld, lastHitWorld); else moveWorld.set(0, 0, 0);
+    lastHitWorld.copy(hitWorld); hadHit = true;
+    moveLocal.copy(moveWorld).transformDirection(inv).multiplyScalar(Math.min(moveWorld.length(), 0.25));
+    doRepel = true;
+  }
+  const mvx = moveLocal.x, mvy = moveLocal.y, mvz = moveLocal.z;
+  const ox = rayO.x, oy = rayO.y, oz = rayO.z, rdx = rayD.x, rdy = rayD.y, rdz = rayD.z;
+
+  let stir = 0;
+  for (let i = 0; i < COUNT; i++) {
+    const i3 = i * 3;
+    let px = pos[i3], py = pos[i3 + 1], pz = pos[i3 + 2];
+    let vx = vel[i3], vy = vel[i3 + 1], vz = vel[i3 + 2];
+
+    // Spring home
+    vx += (home[i3] - px) * kk;
+    vy += (home[i3 + 1] - py) * kk;
+    vz += (home[i3 + 2] - pz) * kk;
+
+    if (doRepel) {
+      // Distance from particle to the pointer ray
+      const wx = px - ox, wy = py - oy, wz = pz - oz;
+      const t = wx * rdx + wy * rdy + wz * rdz;
+      const cx = wx - rdx * t, cy = wy - rdy * t, cz = wz - rdz * t;
+      const d2 = cx * cx + cy * cy + cz * cz;
+      if (d2 < REPEL_R2) {
+        const d = Math.sqrt(d2) + 1e-4;
+        const f = (1 - d / REPEL_R);
+        const ff = f * f * 0.011;
+        vx += (cx / d) * ff + mvx * f * 0.32;
+        vy += (cy / d) * ff + mvy * f * 0.32;
+        vz += (cz / d) * ff + mvz * f * 0.32;
+      }
+    }
+
+    vx *= dd; vy *= dd; vz *= dd;
+    px += vx; py += vy; pz += vz;
+    pos[i3] = px; pos[i3 + 1] = py; pos[i3 + 2] = pz;
+    vel[i3] = vx; vel[i3 + 1] = vy; vel[i3 + 2] = vz;
+
+    const sp = Math.sqrt(vx * vx + vy * vy + vz * vz) * 60;
+    speed[i] += (Math.min(sp, 1.2) - speed[i]) * 0.12;
+    stir += sp;
+  }
+  moveLocal.multiplyScalar(0);
+  return stir / COUNT;
+}
+
+/* ======================================================================
+   Loop
+   ====================================================================== */
+let visible = true;
+new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) clock.getDelta(); }).observe(hero);
+
+let tiltTX = 0, tiltTY = 0;
+function frame() {
+  requestAnimationFrame(frame);
+  if (!visible || document.hidden) return;
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const now = clock.elapsedTime;
+  uniforms.uTime.value = now;
+
+  // Gentle auto-rotation + pointer parallax tilt
+  brain.rotation.y = Math.sin(now * (reduceMotion ? 0.08 : 0.28)) * 0.55;
+  if (pointerActive) { tiltTX = ndc.y * 0.22; tiltTY = ndc.x * 0.3; } else { tiltTX *= 0.98; tiltTY *= 0.98; }
+  tiltX += (tiltTX - tiltX) * 0.05; tiltY += (tiltTY - tiltY) * 0.05;
+  rig.rotation.x = -0.12 + tiltX + Math.sin(now * 0.35) * 0.04;
+  rig.rotation.z = Math.sin(now * 0.27) * 0.03;
+  rig.rotation.y = tiltY;
+  dust.rotation.y = tiltY * 0.3;
+  scene.updateMatrixWorld();
+
+  while (pendingBursts.length) burst(pendingBursts.shift());
+
+  acc += dt;
+  let steps = 0, stir = 0;
+  while (acc >= STEP && steps < 3) { stir = simulate(now); acc -= STEP; steps++; }
+  if (steps === 3) acc = 0;
+  if (steps) { posAttr.needsUpdate = true; speedAttr.needsUpdate = true; }
+
+  energy += (Math.min(stir * 2.2, 1) - energy) * 0.08;
+  uniforms.uFlash.value *= 0.9;
+  bloom.strength = 0.5 + energy * 0.15 + uniforms.uFlash.value * 0.25;
+  rSignal.textContent = energy > 0.5 ? "surging" : energy > 0.12 ? "firing" : "idle";
+
+  composer.render();
+}
+frame();
+</script>
+</body>
+</html>
